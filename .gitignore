@@ -46,6 +46,9 @@ Thumbs.db
 
 # Logs
 *.log
+# But track session logs in ai-tasks
+!ai-tasks/*.log
+!ai-tasks/**/*.log
 
 # Database
 *.db-journal
