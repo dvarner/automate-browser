@@ -47,5 +47,6 @@ class AboutDialog(QDialog):
 
         # Close button
         close_button = QPushButton("Close")
+        close_button.setStyleSheet("QPushButton { color: black; }")
         close_button.clicked.connect(self.accept)
         layout.addWidget(close_button)

@@ -70,10 +70,12 @@ class NewSessionDialog(QDialog):
         button_layout.addStretch()
 
         cancel_button = QPushButton("Cancel")
+        cancel_button.setStyleSheet("QPushButton { color: black; }")
         cancel_button.clicked.connect(self.reject)
         button_layout.addWidget(cancel_button)
 
         create_button = QPushButton("Create")
+        create_button.setStyleSheet("QPushButton { color: black; }")
         create_button.setDefault(True)
         create_button.clicked.connect(self.on_create)
         button_layout.addWidget(create_button)

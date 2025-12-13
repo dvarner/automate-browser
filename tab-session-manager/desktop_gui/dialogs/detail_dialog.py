@@ -51,12 +51,14 @@ class SessionDetailDialog(QDialog):
         button_layout = QHBoxLayout()
 
         load_all_button = QPushButton("Load Entire Session")
+        load_all_button.setStyleSheet("QPushButton { color: black; }")
         load_all_button.clicked.connect(self.on_load_all)
         button_layout.addWidget(load_all_button)
 
         button_layout.addStretch()
 
         close_button = QPushButton("Close")
+        close_button.setStyleSheet("QPushButton { color: black; }")
         close_button.clicked.connect(self.accept)
         button_layout.addWidget(close_button)
 

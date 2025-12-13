@@ -39,6 +39,7 @@ class ConfirmDeleteDialog(QDialog):
         button_layout.addStretch()
 
         cancel_button = QPushButton("Cancel")
+        cancel_button.setStyleSheet("QPushButton { color: black; }")
         cancel_button.clicked.connect(self.reject)
         button_layout.addWidget(cancel_button)
 
