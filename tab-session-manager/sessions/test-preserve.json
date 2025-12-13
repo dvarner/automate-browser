@@ -1,0 +1,31 @@
+{
+  "session_name": "test-preserve",
+  "created_at": "2025-12-06T23:30:00",
+  "groups": [
+    {
+      "name": "Social",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://twitter.com",
+          "title": "Twitter"
+        },
+        {
+          "order": 2,
+          "url": "https://reddit.com",
+          "title": "Reddit"
+        }
+      ]
+    },
+    {
+      "name": "Dev Tools",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://github.com",
+          "title": "GitHub"
+        }
+      ]
+    }
+  ]
+}

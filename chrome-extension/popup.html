@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tab Session Exporter</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Tab Session Exporter</h1>
+      <p class="subtitle">Export tabs to Browser Session Manager</p>
+    </header>
+
+    <main>
+      <div class="info-section">
+        <div class="info-item">
+          <span class="label">Open Tabs:</span>
+          <span class="value" id="tab-count">-</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Tab Groups:</span>
+          <span class="value" id="group-count">-</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Current Window:</span>
+          <span class="value" id="window-info">-</span>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label for="session-name">Session Name:</label>
+        <input
+          type="text"
+          id="session-name"
+          placeholder="e.g., work-tabs, research-project"
+          pattern="[a-zA-Z0-9-_]+"
+          title="Only letters, numbers, dashes, and underscores"
+        >
+        <small class="hint">Only letters, numbers, dashes (-), and underscores (_)</small>
+      </div>
+
+      <div class="options-section">
+        <label class="checkbox-label">
+          <input type="checkbox" id="include-all-windows">
+          <span>Include all windows (not just current)</span>
+        </label>
+      </div>
+
+      <div class="button-section">
+        <button id="export-btn" class="primary-btn">
+          <span class="btn-icon">📥</span>
+          Export Session
+        </button>
+        <button id="preview-btn" class="secondary-btn">
+          <span class="btn-icon">👁️</span>
+          Preview
+        </button>
+      </div>
+
+      <div id="status" class="status hidden"></div>
+
+      <div id="preview" class="preview hidden">
+        <h3>Preview:</h3>
+        <div id="preview-content"></div>
+      </div>
+    </main>
+
+    <footer>
+      <p class="footer-text">Exports to Browser Tab Session Manager format</p>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

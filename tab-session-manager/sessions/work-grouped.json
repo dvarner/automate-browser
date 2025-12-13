@@ -1,0 +1,56 @@
+{
+  "session_name": "work-grouped",
+  "created_at": "2025-12-06T17:00:00",
+  "groups": [
+    {
+      "name": "Communication",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://gmail.com",
+          "title": "Gmail"
+        },
+        {
+          "order": 2,
+          "url": "https://calendar.google.com",
+          "title": "Google Calendar"
+        }
+      ]
+    },
+    {
+      "name": "Development",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://github.com",
+          "title": "GitHub"
+        },
+        {
+          "order": 2,
+          "url": "https://stackoverflow.com",
+          "title": "Stack Overflow"
+        },
+        {
+          "order": 3,
+          "url": "https://localhost:3000",
+          "title": "Local Dev Server"
+        }
+      ]
+    },
+    {
+      "name": "Research",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://www.python.org/doc/",
+          "title": "Python Documentation"
+        },
+        {
+          "order": 2,
+          "url": "https://playwright.dev/python/",
+          "title": "Playwright Python"
+        }
+      ]
+    }
+  ]
+}

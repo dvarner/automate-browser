@@ -1,0 +1,232 @@
+"""
+Wrapper around TabSessionManager for GUI integration.
+Provides Qt signals for events and thread-safe operations.
+"""
+
+import sys
+import json
+from pathlib import Path
+from datetime import datetime
+from PyQt6.QtCore import QObject, pyqtSignal, QThread
+
+# Add parent directory to path to import tab_session_manager
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from tab_session_manager import TabSessionManager
+
+
+class SessionManagerWrapper(QObject):
+    """Thread-safe wrapper for TabSessionManager with Qt signals."""
+
+    # Qt signals
+    session_loaded = pyqtSignal(str)  # session_name
+    session_saved = pyqtSignal(str)   # session_name
+    session_deleted = pyqtSignal(str) # session_name
+    browser_status_changed = pyqtSignal(bool)  # is_running
+
+    def __init__(self):
+        super().__init__()
+        self.sessions_dir = Path(__file__).parent.parent.parent / 'sessions'
+        self.sessions_dir.mkdir(exist_ok=True)
+        self._browser_running = False
+
+    def get_sessions(self):
+        """Get all saved sessions.
+
+        Returns:
+            List of dicts with session info: name, created_at, tab_count, group_count
+        """
+        sessions = []
+        session_files = list(self.sessions_dir.glob('*.json'))
+
+        for session_file in session_files:
+            try:
+                with open(session_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+
+                session_name = session_file.stem
+                created_at = data.get('created_at', 'Unknown')
+
+                # Calculate tab count (handle both old and new format)
+                if 'groups' in data:
+                    tab_count = sum(len(g.get('tabs', [])) for g in data.get('groups', []))
+                    tab_count += len(data.get('ungrouped_tabs', []))
+                    group_count = len(data.get('groups', []))
+                else:
+                    tab_count = len(data.get('tabs', []))
+                    group_count = 0
+
+                sessions.append({
+                    'name': session_name,
+                    'created_at': created_at,
+                    'tab_count': tab_count,
+                    'group_count': group_count,
+                    'file_path': str(session_file)
+                })
+            except Exception as e:
+                print(f"Error loading session {session_file}: {e}")
+
+        return sessions
+
+    def get_session_details(self, session_name):
+        """Get detailed session information including all tabs and groups.
+
+        Args:
+            session_name: Name of the session
+
+        Returns:
+            Dict with session details or None if not found
+        """
+        session_file = self.sessions_dir / f'{session_name}.json'
+
+        if not session_file.exists():
+            return None
+
+        try:
+            with open(session_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            # Parse into consistent format
+            details = {
+                'name': session_name,
+                'created_at': data.get('created_at', 'Unknown'),
+                'groups': [],
+                'ungrouped_tabs': []
+            }
+
+            # Handle new format (with groups)
+            if 'groups' in data:
+                details['groups'] = data.get('groups', [])
+                details['ungrouped_tabs'] = data.get('ungrouped_tabs', [])
+            # Handle old format (flat tabs)
+            elif 'tabs' in data:
+                details['ungrouped_tabs'] = data.get('tabs', [])
+
+            return details
+        except Exception as e:
+            print(f"Error loading session details: {e}")
+            return None
+
+    def load_session(self, session_name, group_filter=None):
+        """Load a session (opens browser with tabs).
+
+        Args:
+            session_name: Name of the session to load
+            group_filter: Optional list of group names to load
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Create TabSessionManager instance
+            manager = TabSessionManager(auto_save_enabled=True, auto_save_interval=3.0)
+
+            # Load the session (this will launch browser)
+            success = manager.load_session(session_name, group_filter=group_filter)
+
+            if success:
+                self.session_loaded.emit(session_name)
+                self._browser_running = True
+                self.browser_status_changed.emit(True)
+
+            return success
+        except Exception as e:
+            print(f"Error loading session: {e}")
+            return False
+
+    def create_new_session(self, session_name, auto_save=True, auto_save_interval=3.0):
+        """Create a new browser session.
+
+        Args:
+            session_name: Name for the session
+            auto_save: Enable auto-save
+            auto_save_interval: Auto-save interval in seconds
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Validate session name
+            if not self._validate_session_name(session_name):
+                return False
+
+            # Create TabSessionManager instance
+            manager = TabSessionManager(
+                auto_save_enabled=auto_save,
+                auto_save_interval=auto_save_interval
+            )
+
+            # Launch browser
+            manager.launch_browser()
+
+            self._browser_running = True
+            self.browser_status_changed.emit(True)
+
+            return True
+        except Exception as e:
+            print(f"Error creating new session: {e}")
+            return False
+
+    def delete_session(self, session_name):
+        """Delete a saved session.
+
+        Args:
+            session_name: Name of the session to delete
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        session_file = self.sessions_dir / f'{session_name}.json'
+
+        if not session_file.exists():
+            return False
+
+        try:
+            session_file.unlink()
+            self.session_deleted.emit(session_name)
+            return True
+        except Exception as e:
+            print(f"Error deleting session: {e}")
+            return False
+
+    def check_browser_status(self):
+        """Check if browser is currently running.
+
+        Returns:
+            bool: True if browser is running, False otherwise
+        """
+        # For now, we'll check if we can connect to the debugging port
+        # This is a simplified check - in production you might want to actually
+        # try connecting via CDP
+        try:
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.5)
+            result = sock.connect_ex(('localhost', 9222))
+            sock.close()
+
+            is_running = (result == 0)
+
+            # Emit signal if status changed
+            if is_running != self._browser_running:
+                self._browser_running = is_running
+                self.browser_status_changed.emit(is_running)
+
+            return is_running
+        except Exception:
+            return False
+
+    def _validate_session_name(self, name):
+        """Validate session name for safety.
+
+        Args:
+            name: Session name to validate
+
+        Returns:
+            bool: True if valid, False otherwise
+        """
+        if not name:
+            return False
+        # Allow alphanumeric, dash, and underscore only
+        allowed_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_')
+        return all(c in allowed_chars for c in name)

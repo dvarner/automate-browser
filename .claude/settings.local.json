@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python run-pm.py:*)",
+      "Bash(python:*)"
+    ]
+  }
+}
