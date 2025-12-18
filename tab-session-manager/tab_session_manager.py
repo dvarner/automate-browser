@@ -77,21 +77,60 @@ class TabSessionManager:
         self.playwright = None
         self.auto_save_manager = AutoSaveManager(self, interval=auto_save_interval, enabled=auto_save_enabled)
 
-    def launch_browser(self):
-        """Launch browser in headed mode and return browser instance."""
-        print("Launching browser...")
+    def launch_browser(self, browser_type='chrome', incognito_mode=False):
+        """Launch browser in headed mode and return browser instance.
+
+        Args:
+            browser_type: Browser to use ('chrome', 'brave', 'firefox', 'chromium')
+            incognito_mode: Launch in incognito/private mode
+        """
+        print(f"Launching {browser_type} browser" + (" in incognito mode..." if incognito_mode else "..."))
         self.playwright = sync_playwright().start()
-        # Launch with remote debugging port for external connections
-        # Additional args to help with network connectivity
-        self.browser = self.playwright.chromium.launch(
-            headless=False,
-            args=[
-                '--remote-debugging-port=9222',
-                '--disable-blink-features=AutomationControlled',  # Less detectable
-                '--no-sandbox',  # Helps with permissions
-                '--disable-web-security',  # For local testing
-            ]
-        )
+
+        # Build launch args
+        launch_args = [
+            '--remote-debugging-port=9222',
+            '--disable-blink-features=AutomationControlled',  # Less detectable
+            '--no-sandbox',  # Helps with permissions
+            '--disable-web-security',  # For local testing
+        ]
+
+        # Add incognito mode flag
+        if incognito_mode:
+            launch_args.append('--incognito')
+
+        # Select browser based on type
+        browser_type_lower = browser_type.lower()
+
+        if browser_type_lower == 'firefox':
+            # Firefox uses different args
+            firefox_args = []
+            if incognito_mode:
+                firefox_args.append('-private')
+            self.browser = self.playwright.firefox.launch(
+                headless=False,
+                args=firefox_args
+            )
+        elif browser_type_lower in ['chrome', 'brave', 'chromium']:
+            # Chromium-based browsers (Chrome, Brave, Chromium)
+            channel = None
+            if browser_type_lower == 'chrome':
+                channel = 'chrome'
+            elif browser_type_lower == 'brave':
+                channel = 'brave'  # Note: May require Brave to be installed
+
+            self.browser = self.playwright.chromium.launch(
+                headless=False,
+                channel=channel,
+                args=launch_args
+            )
+        else:
+            # Default to chromium
+            self.browser = self.playwright.chromium.launch(
+                headless=False,
+                args=launch_args
+            )
+
         # Set a user agent to avoid detection
         self.context = self.browser.new_context(
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'

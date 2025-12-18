@@ -134,13 +134,15 @@ class SessionManagerWrapper(QObject):
             print(f"Error loading session: {e}")
             return False
 
-    def create_new_session(self, session_name, auto_save=True, auto_save_interval=3.0):
+    def create_new_session(self, session_name, auto_save=True, auto_save_interval=3.0, browser_type='chrome', incognito_mode=False):
         """Create a new browser session.
 
         Args:
             session_name: Name for the session
             auto_save: Enable auto-save
             auto_save_interval: Auto-save interval in seconds
+            browser_type: Browser to use ('chrome', 'brave', 'firefox', 'chromium')
+            incognito_mode: Launch in incognito/private mode
 
         Returns:
             bool: True if successful, False otherwise
@@ -156,8 +158,8 @@ class SessionManagerWrapper(QObject):
                 auto_save_interval=auto_save_interval
             )
 
-            # Launch browser
-            manager.launch_browser()
+            # Launch browser with specified options
+            manager.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode)
 
             self._browser_running = True
             self.browser_status_changed.emit(True)

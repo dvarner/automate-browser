@@ -4,7 +4,7 @@ New session dialog - prompts user to create a new browser session.
 
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-    QLineEdit, QCheckBox, QSpinBox, QPushButton, QMessageBox
+    QLineEdit, QCheckBox, QSpinBox, QPushButton, QMessageBox, QComboBox
 )
 from PyQt6.QtCore import Qt
 
@@ -21,6 +21,8 @@ class NewSessionDialog(QDialog):
         self.session_name = ""
         self.auto_save_enabled = True
         self.auto_save_interval = 3.0
+        self.browser_type = "chrome"
+        self.incognito_mode = False
 
         self.init_ui()
 
@@ -43,6 +45,27 @@ class NewSessionDialog(QDialog):
         hint_label = QLabel("Only letters, numbers, dashes, and underscores allowed")
         hint_label.setStyleSheet("color: #666; font-size: 9pt;")
         layout.addWidget(hint_label)
+
+        # Browser selection
+        browser_layout = QHBoxLayout()
+        browser_label = QLabel("Browser:")
+        browser_label.setStyleSheet("color: black;")
+        browser_layout.addWidget(browser_label)
+
+        self.browser_combo = QComboBox()
+        self.browser_combo.addItems(["Chrome", "Brave", "Firefox", "Chromium"])
+        self.browser_combo.setCurrentText("Chrome")
+        self.browser_combo.setStyleSheet("QComboBox { color: black; }")
+        browser_layout.addWidget(self.browser_combo)
+        browser_layout.addStretch()
+
+        layout.addLayout(browser_layout)
+
+        # Incognito mode checkbox
+        self.incognito_checkbox = QCheckBox("Launch in Incognito/Private mode")
+        self.incognito_checkbox.setChecked(False)
+        self.incognito_checkbox.setStyleSheet("color: black;")
+        layout.addWidget(self.incognito_checkbox)
 
         # Auto-save checkbox
         self.auto_save_checkbox = QCheckBox("Enable auto-save")
@@ -113,6 +136,8 @@ class NewSessionDialog(QDialog):
         self.session_name = session_name
         self.auto_save_enabled = self.auto_save_checkbox.isChecked()
         self.auto_save_interval = self.interval_spin.value()
+        self.browser_type = self.browser_combo.currentText().lower()
+        self.incognito_mode = self.incognito_checkbox.isChecked()
 
         self.accept()
 
@@ -127,3 +152,11 @@ class NewSessionDialog(QDialog):
     def get_auto_save_interval(self):
         """Get auto-save interval."""
         return float(self.auto_save_interval)
+
+    def get_browser_type(self):
+        """Get selected browser type."""
+        return self.browser_type
+
+    def get_incognito_mode(self):
+        """Get incognito mode status."""
+        return self.incognito_mode
