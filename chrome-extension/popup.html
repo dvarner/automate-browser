@@ -9,11 +9,19 @@
 <body>
   <div class="container">
     <header>
-      <h1>Tab Session Exporter</h1>
-      <p class="subtitle">Export tabs to Browser Session Manager</p>
+      <h1>Tab Session & Workflow Recorder</h1>
+      <p class="subtitle">Export tabs & record workflows</p>
     </header>
 
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="export">📥 Export Tabs</button>
+      <button class="tab-btn" data-tab="record">🔴 Record Workflow</button>
+    </div>
+
     <main>
+      <!-- Export Tab Content -->
+      <div id="export-tab" class="tab-content active">
       <div class="info-section">
         <div class="info-item">
           <span class="label">Open Tabs:</span>
@@ -35,7 +43,7 @@
           type="text"
           id="session-name"
           placeholder="e.g., work-tabs, research-project"
-          pattern="[a-zA-Z0-9-_]+"
+          pattern="[a-zA-Z0-9_-]+"
           title="Only letters, numbers, dashes, and underscores"
         >
         <small class="hint">Only letters, numbers, dashes (-), and underscores (_)</small>
@@ -65,6 +73,71 @@
         <h3>Preview:</h3>
         <div id="preview-content"></div>
       </div>
+      </div>
+
+      <!-- Record Tab Content -->
+      <div id="record-tab" class="tab-content">
+        <div class="recorder-section">
+          <div class="recorder-status">
+            <span id="recording-status" class="status-idle">⚪ Ready to Record</span>
+          </div>
+
+          <div class="recorder-controls">
+            <button id="start-record-btn" class="primary-btn">
+              <span class="btn-icon">🔴</span>
+              Start Recording
+            </button>
+            <button id="stop-record-btn" class="secondary-btn" disabled>
+              <span class="btn-icon">⏹️</span>
+              Stop Recording
+            </button>
+          </div>
+
+          <div class="recorder-info">
+            <p><strong>How to use:</strong></p>
+            <ol style="font-size: 12px; margin: 8px 0; padding-left: 20px;">
+              <li>Click "Start Recording"</li>
+              <li>Perform actions in the page (click, fill forms, navigate)</li>
+              <li>Click "Stop Recording" when done</li>
+              <li>Review, edit, and export to YAML</li>
+            </ol>
+          </div>
+
+          <div id="actions-section" class="actions-section hidden">
+            <div class="actions-header">
+              <h3>Captured Actions (<span id="action-count">0</span>)</h3>
+              <button id="clear-actions-btn" class="small-btn">Clear All</button>
+            </div>
+
+            <div id="actions-list" class="actions-list">
+              <!-- Actions will be populated here -->
+            </div>
+
+            <div class="workflow-form">
+              <label for="workflow-name">Workflow Name:</label>
+              <input
+                type="text"
+                id="workflow-name"
+                placeholder="my-workflow"
+                value="recorded-workflow"
+              >
+            </div>
+
+            <div class="export-buttons">
+              <button id="preview-yaml-btn" class="secondary-btn">
+                <span class="btn-icon">👁️</span>
+                Preview YAML
+              </button>
+              <button id="export-yaml-btn" class="primary-btn">
+                <span class="btn-icon">📥</span>
+                Export YAML
+              </button>
+            </div>
+
+            <div id="yaml-preview" class="yaml-preview hidden"></div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <footer>
@@ -72,6 +145,7 @@
     </footer>
   </div>
 
+  <script src="yaml-exporter.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

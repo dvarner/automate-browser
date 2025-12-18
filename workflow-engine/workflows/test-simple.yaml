@@ -1,0 +1,18 @@
+# Simple test workflow
+name: "Simple Test - Navigate to Example.com"
+browser: "chromium"
+timeout: 30
+
+steps:
+  - action: navigate
+    url: "https://example.com"
+
+  - action: wait
+    selector: "h1"
+
+  - action: extract
+    name: "page_title"
+    selector: "h1"
+
+  - action: screenshot
+    file: "example-com.png"

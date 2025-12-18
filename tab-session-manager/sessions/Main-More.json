@@ -1,0 +1,223 @@
+{
+  "session_name": "Main-More",
+  "created_at": "2025-12-13T05:22:55.038Z",
+  "groups": [
+    {
+      "name": "dev",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://dev.meetkale.com/",
+          "title": "Meet Kale - Your AI That Grows With You"
+        },
+        {
+          "order": 2,
+          "url": "https://dev.meetkale.com/early-access",
+          "title": "Meet Kale - Your AI That Grows With You"
+        },
+        {
+          "order": 3,
+          "url": "https://portal.dev.meetkale.com/",
+          "title": "portal.dev.meetkale.com"
+        }
+      ]
+    },
+    {
+      "name": "prod",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://www.meetkale.com/",
+          "title": "Meet Kale - Your AI That Grows With You"
+        },
+        {
+          "order": 2,
+          "url": "https://www.meetkale.com/early-access",
+          "title": "Meet Kale - Your AI That Grows With You"
+        }
+      ]
+    },
+    {
+      "name": "Lov",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://lovable.dev/projects/de3cab78-5c39-4143-b05d-368d56447022",
+          "title": "Kale: The Growing AI - Lovable"
+        },
+        {
+          "order": 2,
+          "url": "https://id-preview--de3cab78-5c39-4143-b05d-368d56447022.lovable.app/",
+          "title": "Meet Kale - Your AI That Grows With You"
+        }
+      ]
+    },
+    {
+      "name": "GitHub",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://github.com/MeetKale/MeetKale-Portal",
+          "title": "MeetKale/MeetKale-Portal"
+        },
+        {
+          "order": 2,
+          "url": "https://github.com/MeetKale/MeetKale-Desktop",
+          "title": "MeetKale/MeetKale-Desktop"
+        },
+        {
+          "order": 3,
+          "url": "https://github.com/MeetKale/kale-the-growing-ai",
+          "title": "MeetKale/kale-the-growing-ai"
+        },
+        {
+          "order": 4,
+          "url": "https://github.com/settings/emails",
+          "title": "Email settings"
+        }
+      ]
+    },
+    {
+      "name": "Social",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://meetkalecom.substack.com/publish/posts/detail/179230650?referrer=%2Fpublish%2Fhome%3Futm_source%3Dmenu",
+          "title": "Substack Home - David's Substack"
+        },
+        {
+          "order": 2,
+          "url": "https://meetkalecom.substack.com/",
+          "title": "David's Substack | Meet Kale | Substack"
+        },
+        {
+          "order": 3,
+          "url": "https://substack.com/@meetkale?utm_source=activity_item",
+          "title": "Meet Kale | Substack"
+        },
+        {
+          "order": 4,
+          "url": "https://nocodeexits.substack.com/p/meet-kale-the-ai-that-actually-remembers",
+          "title": "Meet Kale: The AI That Actually Remembers You"
+        },
+        {
+          "order": 5,
+          "url": "https://nocodeexits.substack.com/p/meet-kale-the-ai-that-actually-remembers/comment/179981744?utm_source=activity_item#comment-182362968?utm_source=activity_item",
+          "title": "Comments - Meet Kale: The AI That Actually Remembers You"
+        },
+        {
+          "order": 6,
+          "url": "https://www.instagram.com/accounts/edit/",
+          "title": "Instagram"
+        },
+        {
+          "order": 7,
+          "url": "https://x.com/settings/screen_name",
+          "title": "x.com/settings/screen_name"
+        },
+        {
+          "order": 8,
+          "url": "https://accounts.google.com/v3/signin/identifier?checkedDomains=youtube&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den%26next%3D%252F&flowEntry=AddSession&flowName=GlifWebSignIn&hl=en&pstMsg=1&service=youtube&dsh=S-15045980%3A1763868914834998",
+          "title": "YouTube"
+        }
+      ]
+    }
+  ],
+  "ungrouped_tabs": [
+    {
+      "order": 1,
+      "url": "https://mail.google.com/mail/u/0/#inbox",
+      "title": "Inbox (133) - rthinkdotdev@gmail.com - Gmail"
+    },
+    {
+      "order": 2,
+      "url": "https://www.dynadot.com/?si=1&signin_done=/account/domain/name/list.html",
+      "title": "Buy a Domain Name - Register, Manage, and Save More | Dynadot"
+    },
+    {
+      "order": 3,
+      "url": "https://www.dynadot.com/domain/search?domain=terminalstack.com",
+      "title": "Domain Search Made Easy: Find Your Perfect Domain | Dynadot"
+    },
+    {
+      "order": 4,
+      "url": "https://dash.cloudflare.com/067a9bb36df23e99f06f00b680fe59c4/meetkale.com/dns/records",
+      "title": "DNS | Records | meetkale.com | Meetkalecom@gmail.com's Account | Cloudflare"
+    },
+    {
+      "order": 5,
+      "url": "https://dnschecker.org/#A/meetkale.com",
+      "title": "DNS Checker - DNS Check Propagation Tool"
+    },
+    {
+      "order": 6,
+      "url": "http://localhost:8000/",
+      "title": "AI Project Manager"
+    },
+    {
+      "order": 7,
+      "url": "https://search.brave.com/ask?q=What+is+a+Neuro-Symbolic+Hybrid+System&source=quick-answer-followup&quickAnswerKey=c2200e1f93b05e5ac75b2c&quickAnswerQuery=What+is+a+Neuro-Symbolic+Hybrid+System&conversation=087b76e4ceff2a87db36cfaebbc9c8edde15",
+      "title": "What is a Neuro-Symbolic Hybrid System - Ask Brave"
+    },
+    {
+      "order": 8,
+      "url": "https://app.offerlab.com/login",
+      "title": "OfferLab"
+    },
+    {
+      "order": 9,
+      "url": "https://analytics.google.com/analytics/web/?authuser=5#/a375643877p513741066/reports/dashboard?r=reporting-hub",
+      "title": "Analytics | Reports snapshot"
+    },
+    {
+      "order": 10,
+      "url": "https://myaccount.google.com/u/5/?rapt=AEjHL4NgStnRq17XO8ADjtwWvzn8iyD8M_DbW0JyTq_fn29RFWadOTmBJRSTlv03q42aXUhUXoz4bETcKFT5JEJAlJnRPlo2sBuik2WuMDozWtumP00YAgg",
+      "title": "Google Account"
+    },
+    {
+      "order": 11,
+      "url": "https://console.cloud.google.com/enable-mfa?redirectTo=%2Fgemini%2Fiframe%3Fproject%3Dgetemail-463109%26folder%3D%26organizationId%3D",
+      "title": "Google Cloud console"
+    },
+    {
+      "order": 12,
+      "url": "https://console.cloud.google.com/welcome?authuser=5&project=getemail-463109&pli=1",
+      "title": "Google Cloud console"
+    },
+    {
+      "order": 13,
+      "url": "https://clarity.microsoft.com/projects/view/u8i8qzglnb/dashboard?date=Last%203%20days",
+      "title": "Meet Kale - Clarity"
+    },
+    {
+      "order": 14,
+      "url": "https://www.visualsp.com/blog/what-is-microsoft-clarity/",
+      "title": "What Is Microsoft Clarity: A Comprehensive Guide | VisualSP"
+    },
+    {
+      "order": 15,
+      "url": "https://onboarding.brevo.com/account/register/verify",
+      "title": "Great! Now let's verify your email address. - Brevo"
+    },
+    {
+      "order": 16,
+      "url": "https://app.brevo.com/",
+      "title": "Hello Meet - Brevo"
+    },
+    {
+      "order": 17,
+      "url": "https://www.reddit.com/",
+      "title": "Reddit - The heart of the internet"
+    },
+    {
+      "order": 18,
+      "url": "https://bloom.diy/",
+      "title": "Bloom - Create Mobile Apps in Seconds"
+    },
+    {
+      "order": 19,
+      "url": "http://localhost:8001/",
+      "title": "localhost"
+    }
+  ]
+}

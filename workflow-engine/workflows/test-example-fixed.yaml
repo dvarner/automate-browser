@@ -1,0 +1,18 @@
+# Fixed test workflow - manually added initial navigation
+name: "Example.com Test"
+browser: "chrome"
+timeout: 30
+
+steps:
+  # First, navigate to the page
+  - action: navigate
+    url: "https://example.com"
+
+  # Then click the "More information" link
+  - action: click
+    selector: "a"  # Simplified selector - just find first link
+
+  # Wait for new page to load
+  - action: wait
+    selector: "h1"
+    timeout: 10

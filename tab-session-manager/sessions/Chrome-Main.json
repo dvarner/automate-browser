@@ -1,0 +1,203 @@
+{
+  "session_name": "Chrome-Main",
+  "created_at": "2025-12-13T05:36:23.394Z",
+  "groups": [
+    {
+      "name": "Claud",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://claude.ai/settings/billing",
+          "title": "Claude"
+        },
+        {
+          "order": 2,
+          "url": "https://claude.ai/chat/58a06cb0-4ebc-4934-8fcf-c863599dad64",
+          "title": "Claude"
+        },
+        {
+          "order": 3,
+          "url": "https://claude.ai/chat/22f7dce8-ae27-41bb-a71f-dc74b0c0d5c1",
+          "title": "Claude"
+        }
+      ]
+    },
+    {
+      "name": "DH",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://www.notion.so/Total-Talent-Source-DirectHire-Timeline-Projections-24e6016bb9d280ab929ecb143193b1cb",
+          "title": "Total Talent Source: DirectHire: Timeline / Projections"
+        },
+        {
+          "order": 2,
+          "url": "https://www.notion.so/Total-Talent-Source-aka-DirectHire-1fd6016bb9d28061b38bf7322758e1e6",
+          "title": "Total Talent Source aka DirectHire"
+        },
+        {
+          "order": 3,
+          "url": "https://careerspan.notion.site/Careerspan-AI-Powered-Candidate-Assessment-2925c3d6a5db800fac4ced13b1c8425b",
+          "title": "Careerspan: AI-Powered Candidate Assessment"
+        }
+      ]
+    },
+    {
+      "name": "Group 296209369",
+      "tabs": [
+        {
+          "order": 1,
+          "url": "https://laravel-cp.varnertech.com/login",
+          "title": "Login"
+        },
+        {
+          "order": 2,
+          "url": "https://business.facebook.com/latest/home?business_id=332992967177836&asset_id=718867735120422",
+          "title": "Meta Business Suite"
+        },
+        {
+          "order": 3,
+          "url": "https://mail.google.com/mail/u/3/#all/FMfcgzQcqlFplHQCGxkWdtXxGJzQFCQf",
+          "title": "Important message about your account, rthinkdev - rthinkdotdev@gmail.com - Gmail"
+        },
+        {
+          "order": 4,
+          "url": "https://play.google.com/store/account/subscriptions?hl=en_US",
+          "title": "Google Play"
+        },
+        {
+          "order": 5,
+          "url": "https://console.cloud.google.com/welcome?project=getemail-360523",
+          "title": "GetEmail – Google Cloud console"
+        },
+        {
+          "order": 6,
+          "url": "https://rthink.dev/",
+          "title": "rThink.dev | AI & Web Consulting Services"
+        }
+      ]
+    }
+  ],
+  "ungrouped_tabs": [
+    {
+      "order": 1,
+      "url": "https://urlkeep.com/",
+      "title": "UrlKeep.com"
+    },
+    {
+      "order": 2,
+      "url": "https://www.notion.so/1fd07bb3c957819fa445eb46c90c92f8?v=1fd07bb3c957815ea300000c6d01ce8b",
+      "title": "DailyTime DB"
+    },
+    {
+      "order": 3,
+      "url": "https://www.notion.so/25007bb3c95780f18654f7f2ab8349b1?v=25107bb3c957804ea17d000cd315f2a5",
+      "title": "Finance > Personal DB | By Date"
+    },
+    {
+      "order": 4,
+      "url": "https://i.imgur.com/vESD6qq.png",
+      "title": "vESD6qq.png (1778×1840)"
+    },
+    {
+      "order": 5,
+      "url": "https://www.tiktok.com/@coderdude.com",
+      "title": "(8)TikTok - Make Your Day"
+    },
+    {
+      "order": 6,
+      "url": "https://claude.ai/settings/usage",
+      "title": "Claude"
+    },
+    {
+      "order": 7,
+      "url": "https://claude.ai/artifacts",
+      "title": "Claude"
+    },
+    {
+      "order": 8,
+      "url": "https://claude.ai/code",
+      "title": "Claude Code | Claude"
+    },
+    {
+      "order": 9,
+      "url": "https://www.google.com/search?q=barebells+cookie+and+cream&oq=barebells+cookie+and+cream&gs_lcrp=EgZjaHJvbWUqCggAEAAY4wIYgAQyCggAEAAY4wIYgAQyCggBEC4YgAQY5QQyBwgCEAAYgAQyCggDEAAYChgWGB4yCAgEEAAYFhgeMggIBRAAGBYYHjIICAYQABgWGB4yBggHEEUYPNIBBzQ5MWowajSoAgOwAgHxBYHGc0Yr5UBq&sourceid=chrome&ie=UTF-8",
+      "title": "barebells cookie and cream - Google Search"
+    },
+    {
+      "order": 10,
+      "url": "https://chatgpt.com/c/69243a53-a6ac-8330-b4ce-9327a24061b9",
+      "title": "Publish Minecraft mod"
+    },
+    {
+      "order": 11,
+      "url": "https://ai-community-215177.circle.so/messages/2241945c-0ee1-4602-bd72-0e821805cb6c",
+      "title": "AI Community"
+    },
+    {
+      "order": 12,
+      "url": "https://ai-community-215177.circle.so/events",
+      "title": "Events | AI Community"
+    },
+    {
+      "order": 13,
+      "url": "https://chatgpt.com/c/6926ab5a-abdc-832f-97d4-1f73c0740e4f",
+      "title": "Playwright visual mode"
+    },
+    {
+      "order": 14,
+      "url": "https://chatgpt.com/c/692bb0c3-fbec-8333-b8ef-6ab27b096915",
+      "title": "Best Go Coding Model"
+    },
+    {
+      "order": 15,
+      "url": "https://aider.chat/docs/usage/tips.html",
+      "title": "Tips | aider"
+    },
+    {
+      "order": 16,
+      "url": "https://www.dynadot.com/order/payment",
+      "title": "Payment"
+    },
+    {
+      "order": 17,
+      "url": "https://mail.google.com/mail/u/3/#inbox",
+      "title": "Inbox (125) - rthinkdotdev@gmail.com - Gmail"
+    },
+    {
+      "order": 18,
+      "url": "https://chatgpt.com/g/g-p-691abcb2713c8191b14bf3a06fa7eb3d-meetkale/c/692eb9a9-ce70-8330-8af7-d0bb43636991",
+      "title": "MeetKale - Scaling MeetKale strategy"
+    },
+    {
+      "order": 19,
+      "url": "https://www.google.com/search?q=vscode+by+default+git&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRifBTIHCAIQIRifBTIHCAMQIRifBTIHCAQQIRifBTIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRifBTIHCAkQIRifBdIBCDcyNTVqMGo3qAIAsAIA&sourceid=chrome&ie=UTF-8&udm=50&fbs=AIIjpHxU7SXXniUZfeShr2fp4giZud1z6kQpMfoEdCJxnpm_3Tyhd8JXZOxjXn9_g38o_Rcmb8vRixuDgz6kXd7eZ4AzbW_2ZFtVskMTnr3Q0Phz0D0iitAOTEZ_qCVRE1Znf8ro2mH6AebWnmM47JTh8GYc26sAppZOFXeTd6auhaf0zWELtnAHWFpZkRx8WWOdGm9DarwxFeJSw7xcQIpcjiiUSXEkRQ&ved=2ahUKEwjAjdD00a-RAxWNRzABHdn5IIgQ0NsOegQIHRAA&aep=10&ntc=1&mstk=AUtExfBZgESrjaDVzETf_grhj_92gd7_3OmTKG-rgP32HzCcJUzvPzG7K-Hw_O6o11Ww6ejOcet2vpoQwAx_9JZTx38VaEV2NjofOY-_rdz1MUhU_6hoODtcoGP3-P_0CENtWz0sSXMBPDC10afICCpkUHNuRzwrbNSZGPVmyjAd6f80UxBqPHZRG4WdWIkJl7k9-gASoxgyQeRKlncAGfy7AfkrqIscfXEprb7fYxkMr_U4KEcOUT3tmujqbZFJ4MYjKIUd1nR7N7LSil1Vzh_7bz45Gvh6tUA-f1hfe59821_wtCc9JoI7J2wAEnXKzWJaxs-9SXvHs22fwA&csuir=1&mtid=uqE3aa7XGY2PwbkP2fODwQg",
+      "title": "vscode by default git - Google Search"
+    },
+    {
+      "order": 20,
+      "url": "https://www.google.com/search?q=how+often+does+paddle+shutdown+accounts+and+why&oq=how+often+does+paddle+shutdown+accounts+and+why&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRirAtIBCTEzODYwajBqN6gCALACAA&sourceid=chrome&ie=UTF-8",
+      "title": "how often does paddle shutdown accounts and why - Google Search"
+    },
+    {
+      "order": 21,
+      "url": "https://github.com/dvarner/claude-repo",
+      "title": "dvarner/claude-repo"
+    },
+    {
+      "order": 22,
+      "url": "https://getadblock.com/en/update/latest/?ipm-campaign-id=72&ipm-device-id=4tj0yunv80555768&s=ipmnt&ca=Aw%3D%3D&bc=89793",
+      "title": "Your AdBlock has been updated!"
+    },
+    {
+      "order": 23,
+      "url": "https://www.google.com/search?q=downie&oq=downie&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTINCAEQABiDARixAxiABDIHCAIQLhiABDIHCAMQABiABDIHCAQQABiABDIHCAUQABiABDIHCAYQABiABDIHCAcQABiABDIHCAgQABiABDIHCAkQABiABNIBCDM4MzFqMGo3qAIAsAIA&sourceid=chrome&ie=UTF-8",
+      "title": "downie - Google Search"
+    },
+    {
+      "order": 24,
+      "url": "chrome://extensions/",
+      "title": "Extensions"
+    }
+  ]
+}

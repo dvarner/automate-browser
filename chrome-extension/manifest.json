@@ -1,13 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "Tab Session Exporter",
-  "version": "1.0.0",
-  "description": "Export your browser tabs with groups to Browser Tab Session Manager format",
+  "name": "Tab Session Exporter & Workflow Recorder",
+  "version": "2.0.0",
+  "description": "Export tabs and record browser workflows to YAML format",
   "permissions": [
     "tabs",
     "tabGroups",
-    "downloads"
+    "downloads",
+    "activeTab",
+    "scripting",
+    "storage"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

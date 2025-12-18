@@ -1,0 +1,42 @@
+# Example: Form Submission
+name: "Contact Form Submission"
+browser: "chrome"
+timeout: 30
+
+steps:
+  - action: navigate
+    url: "https://example.com/contact"
+
+  - action: fill
+    selector: "#name"
+    value: "John Doe"
+
+  - action: fill
+    selector: "#email"
+    value: "john@example.com"
+
+  - action: fill
+    selector: "#subject"
+    value: "Inquiry about services"
+
+  - action: fill
+    selector: "#message"
+    value: "I would like to know more about your automation services."
+
+  - action: wait_for_human
+    reason: "Please review the form and solve CAPTCHA if present"
+    timeout: 300
+
+  - action: click
+    selector: "button[type='submit']"
+
+  - action: wait
+    selector: ".success-message"
+    timeout: 10
+
+  - action: extract
+    name: "confirmation"
+    selector: ".success-message"
+
+  - action: screenshot
+    file: "form-submitted.png"

@@ -1,0 +1,22 @@
+# Auto-generated from Playwright codegen
+# Review and edit as needed:
+#   - Update workflow name
+#   - Add wait_for_human steps for logins/CAPTCHAs
+#   - Add extract/extract_table for data scraping
+#   - Convert role/text selectors to CSS selectors
+
+name: Google Search Test
+browser: chromium
+timeout: 30
+steps:
+- action: navigate
+  url: https://www.google.com/
+- action: fill
+  selector: textarea[name='q']
+  value: playwright automation
+- action: click
+  selector: input[value='Google Search']
+- action: wait
+  selector: '#search'
+- action: screenshot
+  file: google-results.png

@@ -284,3 +284,300 @@ footer {
 .preview::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* ============================================================================
+   WORKFLOW RECORDER STYLES
+   ============================================================================ */
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  background: #f0f0f0;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+}
+
+.tab-btn:hover {
+  background: #e8e8e8;
+  transform: none;
+  box-shadow: none;
+}
+
+.tab-btn.active {
+  background: white;
+  border-bottom: 3px solid #667eea;
+  color: #667eea;
+}
+
+/* Tab Content */
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Recorder Section */
+.recorder-section {
+  padding: 0;
+}
+
+.recorder-status {
+  text-align: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.status-idle {
+  color: #999;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.status-recording {
+  color: #f44336;
+  font-weight: 600;
+  font-size: 14px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.recorder-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.recorder-info {
+  background: #e3f2fd;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 20px;
+  border-left: 4px solid #1565c0;
+}
+
+.recorder-info p {
+  margin: 0 0 8px 0;
+  color: #1565c0;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.recorder-info ol {
+  color: #555;
+}
+
+/* Actions Section */
+.actions-section {
+  margin-top: 20px;
+}
+
+.actions-section.hidden {
+  display: none;
+}
+
+.actions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.actions-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.small-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.small-btn:hover {
+  background: #d32f2f;
+}
+
+/* Actions List */
+.actions-list {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 15px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.no-actions {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  font-size: 13px;
+}
+
+.action-item {
+  background: white;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid #e0e0e0;
+  transition: box-shadow 0.2s;
+}
+
+.action-item:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.action-number {
+  background: #667eea;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.action-details {
+  flex: 1;
+}
+
+.action-type {
+  font-weight: 600;
+  color: #667eea;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.action-detail {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete-action-btn {
+  background: #ffebee;
+  color: #f44336;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.delete-action-btn:hover {
+  background: #f44336;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Workflow Form */
+.workflow-form {
+  margin-bottom: 15px;
+}
+
+.workflow-form label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #555;
+  font-size: 13px;
+}
+
+.workflow-form input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.workflow-form input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* Export Buttons */
+.export-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+/* YAML Preview */
+.yaml-preview {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.yaml-preview.hidden {
+  display: none;
+}
+
+.actions-list::-webkit-scrollbar,
+.yaml-preview::-webkit-scrollbar {
+  width: 6px;
+}
+
+.actions-list::-webkit-scrollbar-track,
+.yaml-preview::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.actions-list::-webkit-scrollbar-thumb,
+.yaml-preview::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.actions-list::-webkit-scrollbar-thumb:hover,
+.yaml-preview::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

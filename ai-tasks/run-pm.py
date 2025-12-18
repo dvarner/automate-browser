@@ -28,13 +28,23 @@ from pathlib import Path
 # Configuration
 # ============================================================================
 
-# Find ai-pm-gui (go up to D:\Claude\ai-pm-gui)
-project_root = Path(__file__).parent.parent  # D:\Claude\YourProject
-ai_pm_gui = project_root.parent / 'ai-pm-gui'  # D:\Claude\ai-pm-gui
+# Find ai-pm-gui by searching upwards from project root
+project_root = Path(__file__).parent.parent  # Project root (where ai-tasks/ is)
 
-# Verify ai-pm-gui exists
-if not ai_pm_gui.exists():
-    print(f"Error: ai-pm-gui not found at {ai_pm_gui}")
+# Search upwards for ai-pm-gui directory
+current = project_root
+ai_pm_gui = None
+for _ in range(5):  # Search up to 5 levels
+    candidate = current.parent / 'ai-pm-gui'
+    if candidate.exists() and candidate.is_dir():
+        ai_pm_gui = candidate
+        break
+    current = current.parent
+
+# Verify ai-pm-gui was found
+if not ai_pm_gui or not ai_pm_gui.exists():
+    print(f"Error: ai-pm-gui not found")
+    print(f"Searched upwards from: {project_root}")
     print("Please ensure D:\\Claude\\ai-pm-gui is installed")
     sys.exit(1)
 

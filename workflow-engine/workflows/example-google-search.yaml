@@ -1,0 +1,38 @@
+# Example: Simple Google Search
+name: "Google Search Example"
+browser: "chrome"
+timeout: 30
+
+steps:
+  - action: navigate
+    url: "https://www.google.com"
+
+  - action: wait
+    selector: "textarea[name='q']"
+
+  - action: fill
+    selector: "textarea[name='q']"
+    value: "Playwright automation"
+
+  - action: click
+    selector: "input[value='Google Search']"
+    wait_after: 2
+
+  - action: wait
+    selector: "#search"
+
+  - action: screenshot
+    file: "google-results.png"
+    full_page: true
+
+  - action: extract_table
+    name: "search_results"
+    rows: "#search .g"
+    columns:
+      title: "h3"
+      url: "a"
+      snippet: ".VwiC3b"
+
+  - action: save_csv
+    data: "search_results"
+    file: "google-search-results.csv"

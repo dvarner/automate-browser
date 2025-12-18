@@ -1,13 +1,16 @@
-// Tab Session Exporter - Main Logic
+// Tab Session Exporter & Workflow Recorder - Main Logic
 
 let currentTabsData = null;
 let currentGroupsData = null;
+let recordingState = null;
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', async () => {
   await loadTabsInfo();
   setupEventListeners();
   generateDefaultSessionName();
+  await loadRecordingState();
+  setupTabSwitching();
 });
 
 // Setup event listeners
@@ -279,3 +282,256 @@ function showStatus(message, type) {
     }, 5000);
   }
 }
+
+// ============================================================================
+// WORKFLOW RECORDER FUNCTIONALITY
+// ============================================================================
+
+// Setup tab switching
+function setupTabSwitching() {
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabName = btn.dataset.tab;
+
+      // Update buttons
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Update content
+      tabContents.forEach(content => {
+        if (content.id === `${tabName}-tab`) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
+        }
+      });
+    });
+  });
+
+  // Setup recorder event listeners
+  document.getElementById('start-record-btn').addEventListener('click', handleStartRecording);
+  document.getElementById('stop-record-btn').addEventListener('click', handleStopRecording);
+  document.getElementById('clear-actions-btn').addEventListener('click', handleClearActions);
+  document.getElementById('preview-yaml-btn').addEventListener('click', handlePreviewYAML);
+  document.getElementById('export-yaml-btn').addEventListener('click', handleExportYAML);
+}
+
+// Load recording state from background
+async function loadRecordingState() {
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'GET_RECORDING_STATE' });
+    recordingState = response;
+    console.log('[Popup] Loaded recording state:', recordingState);
+    console.log('[Popup] Actions count:', recordingState.actions?.length || 0);
+    updateRecordingUI();
+  } catch (error) {
+    console.error('[Popup] Error loading state:', error);
+  }
+}
+
+// Update recording UI based on state
+function updateRecordingUI() {
+  console.log('[Popup] Updating UI with state:', recordingState);
+
+  const statusEl = document.getElementById('recording-status');
+  const startBtn = document.getElementById('start-record-btn');
+  const stopBtn = document.getElementById('stop-record-btn');
+  const actionsSection = document.getElementById('actions-section');
+
+  if (!statusEl || !startBtn || !stopBtn || !actionsSection) {
+    console.error('[Popup] UI elements not found!');
+    return;
+  }
+
+  if (recordingState.isRecording) {
+    statusEl.textContent = '🔴 Recording...';
+    statusEl.className = 'status-recording';
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    console.log('[Popup] UI set to recording state');
+  } else {
+    statusEl.textContent = '⚪ Ready to Record';
+    statusEl.className = 'status-idle';
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    console.log('[Popup] UI set to idle state');
+  }
+
+  // Show actions section if we have actions
+  const hasActions = recordingState.actions && recordingState.actions.length > 0;
+  console.log('[Popup] Has actions:', hasActions, 'Count:', recordingState.actions?.length);
+
+  if (hasActions) {
+    actionsSection.classList.remove('hidden');
+    renderActions();
+    console.log('[Popup] Actions section shown');
+  } else {
+    actionsSection.classList.add('hidden');
+    console.log('[Popup] Actions section hidden (no actions)');
+  }
+}
+
+// Start recording
+async function handleStartRecording() {
+  try {
+    // Get active tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    console.log('[Popup] Starting recording on tab:', tab.url);
+
+    // Check if we can record on this page
+    if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') ||
+        tab.url.startsWith('edge://') || tab.url.startsWith('about:')) {
+      alert('❌ Cannot record on system pages!\n\nPlease navigate to a web page (e.g., https://example.com) and try again.');
+      return;
+    }
+
+    // Send start recording message to background
+    const response = await chrome.runtime.sendMessage({
+      type: 'START_RECORDING',
+      tabId: tab.id,
+      url: tab.url
+    });
+
+    if (response.success) {
+      recordingState = response.state;
+      updateRecordingUI();
+      console.log('[Popup] Recording started successfully');
+      // Close popup so user can interact with page
+      // window.close(); // Commented out so popup stays open for debugging
+    }
+  } catch (error) {
+    console.error('[Popup] Error starting recording:', error);
+    alert('❌ Failed to start recording!\n\n' + error.message + '\n\nMake sure you\'re on a web page, not a chrome:// page.');
+  }
+}
+
+// Stop recording
+async function handleStopRecording() {
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'STOP_RECORDING' });
+
+    if (response.success) {
+      recordingState = response.state;
+      updateRecordingUI();
+    }
+  } catch (error) {
+    console.error('Error stopping recording:', error);
+    alert('Failed to stop recording: ' + error.message);
+  }
+}
+
+// Clear all actions
+async function handleClearActions() {
+  if (!confirm('Clear all captured actions?')) return;
+
+  try {
+    await chrome.runtime.sendMessage({ type: 'CLEAR_ACTIONS' });
+    recordingState.actions = [];
+    updateRecordingUI();
+  } catch (error) {
+    console.error('Error clearing actions:', error);
+  }
+}
+
+// Render actions list
+function renderActions() {
+  const actionsList = document.getElementById('actions-list');
+  const actionCount = document.getElementById('action-count');
+
+  actionCount.textContent = recordingState.actions.length;
+
+  if (!recordingState.actions || recordingState.actions.length === 0) {
+    actionsList.innerHTML = '<p class="no-actions">No actions captured yet</p>';
+    return;
+  }
+
+  let html = '';
+  recordingState.actions.forEach((action, index) => {
+    html += `
+      <div class="action-item">
+        <div class="action-number">${index + 1}</div>
+        <div class="action-details">
+          <div class="action-type">${action.action}</div>
+          ${renderActionDetails(action)}
+        </div>
+        <button class="delete-action-btn" data-index="${index}">✕</button>
+      </div>
+    `;
+  });
+
+  actionsList.innerHTML = html;
+
+  // Add delete listeners
+  document.querySelectorAll('.delete-action-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const index = parseInt(e.target.dataset.index);
+      const response = await chrome.runtime.sendMessage({
+        type: 'DELETE_ACTION',
+        index: index
+      });
+      if (response.success) {
+        recordingState.actions = response.actions;
+        renderActions();
+      }
+    });
+  });
+}
+
+// Render action details
+function renderActionDetails(action) {
+  switch (action.action) {
+    case 'navigate':
+      return `<div class="action-detail">URL: ${action.url}</div>`;
+
+    case 'click':
+      return `
+        <div class="action-detail">Selector: ${action.selector}</div>
+        ${action.text ? `<div class="action-detail">Text: ${action.text}</div>` : ''}
+      `;
+
+    case 'fill':
+      return `
+        <div class="action-detail">Selector: ${action.selector}</div>
+        <div class="action-detail">Value: ${action.value}</div>
+      `;
+
+    default:
+      return `<div class="action-detail">${JSON.stringify(action)}</div>`;
+  }
+}
+
+// Preview YAML
+function handlePreviewYAML() {
+  const workflowName = document.getElementById('workflow-name').value || 'recorded-workflow';
+  const yaml = actionsToYAML(recordingState.actions, workflowName, 'chrome');
+
+  const previewEl = document.getElementById('yaml-preview');
+  previewEl.innerHTML = previewYAML(yaml);
+  previewEl.classList.remove('hidden');
+}
+
+// Export YAML
+function handleExportYAML() {
+  const workflowName = document.getElementById('workflow-name').value || 'recorded-workflow';
+  const yaml = actionsToYAML(recordingState.actions, workflowName, 'chrome');
+
+  const filename = `${workflowName}.yaml`;
+  downloadYAML(yaml, filename);
+
+  alert(`✓ Exported to ${filename}\n\nSave to: workflow-engine/workflows/\n\nRun with:\npython workflow_runner.py workflows/${filename}`);
+}
+
+// Listen for action updates from background
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('[Popup] Received message:', message);
+  if (message.type === 'ACTIONS_UPDATED') {
+    console.log('[Popup] Actions updated, new count:', message.actions.length);
+    recordingState.actions = message.actions;
+    updateRecordingUI();
+  }
+  return true;
+});

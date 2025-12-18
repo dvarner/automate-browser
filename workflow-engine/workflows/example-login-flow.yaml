@@ -1,0 +1,44 @@
+# Example: Login Flow with Human Interaction
+name: "Login Flow Example"
+browser: "chrome"
+timeout: 30
+
+steps:
+  - action: navigate
+    url: "https://example.com/login"
+
+  - action: wait_for_human
+    reason: "Please complete CAPTCHA if present"
+    continue_selector: "#username"
+    timeout: 120
+
+  - action: fill
+    selector: "#username"
+    value: "demo@example.com"
+
+  - action: fill
+    selector: "#password"
+    value: "demo-password"
+    sensitive: true
+
+  - action: click
+    selector: "button[type='submit']"
+
+  - action: wait_for_human
+    reason: "Please complete 2FA if required"
+    continue_url: "/dashboard"
+    timeout: 120
+
+  - action: wait
+    selector: ".dashboard"
+
+  - action: screenshot
+    file: "dashboard.png"
+
+  - action: extract
+    name: "username"
+    selector: ".user-profile .name"
+
+  - action: extract
+    name: "account_balance"
+    selector: ".balance-amount"
