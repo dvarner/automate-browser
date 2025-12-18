@@ -1,0 +1,78 @@
+name: "Download Examples - Files, Links, and Media"
+browser: "chrome"
+timeout: 30
+
+steps:
+  # Example 1: Download by clicking a download button
+  # (Useful for download buttons that trigger browser downloads)
+  - action: navigate
+    url: "https://example.com/downloads"
+
+  - action: download
+    selector: "a.download-button"
+    destination: "results/downloads"
+    save_as: "example-file.pdf"
+    timeout: 60
+    name: "pdf_download"
+
+  # Example 2: Download file from a link without clicking
+  # (Useful when you just want the file from a link's href)
+  - action: navigate
+    url: "https://example.com"
+
+  - action: download_link
+    selector: "a[href*='.pdf']"
+    destination: "D:/MyDownloads/PDFs"
+    save_as: "custom-document.pdf"
+    timeout: 60
+
+  # Example 3: Download an image from the page
+  - action: download_media
+    selector: "img.logo"
+    type: "image"
+    destination: "results/images"
+    save_as: "company-logo.png"
+    timeout: 30
+
+  # Example 4: Download a video
+  - action: navigate
+    url: "https://example.com/videos"
+
+  - action: download_media
+    selector: "video.featured"
+    type: "video"
+    destination: "D:/Videos/Downloads"
+    save_as: "featured-video.mp4"
+    timeout: 120
+
+  # Example 5: Download multiple images in sequence
+  - action: navigate
+    url: "https://example.com/gallery"
+
+  - action: download_media
+    selector: ".gallery img:nth-child(1)"
+    type: "image"
+    destination: "results/gallery"
+    save_as: "image-1.jpg"
+
+  - action: download_media
+    selector: ".gallery img:nth-child(2)"
+    type: "image"
+    destination: "results/gallery"
+    save_as: "image-2.jpg"
+
+  - action: download_media
+    selector: ".gallery img:nth-child(3)"
+    type: "image"
+    destination: "results/gallery"
+    save_as: "image-3.jpg"
+
+  # Example 6: Download with error handling
+  - action: download_link
+    selector: "a.optional-download"
+    destination: "results/downloads"
+    continue_on_error: true  # Continue even if download fails
+
+  # Take screenshot to verify completion
+  - action: screenshot
+    file: "downloads-complete.png"

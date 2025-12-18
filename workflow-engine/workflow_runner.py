@@ -24,6 +24,7 @@ from actions.interaction import ClickAction, FillAction
 from actions.extraction import ExtractAction, ExtractTableAction
 from actions.human import WaitForHumanAction
 from actions.utility import ScreenshotAction, SaveCSVAction, ConditionalAction
+from actions.download import DownloadAction, DownloadLinkAction, DownloadMediaAction
 
 
 class WorkflowRunner:
@@ -41,6 +42,9 @@ class WorkflowRunner:
         'screenshot': ScreenshotAction,
         'save_csv': SaveCSVAction,
         'conditional': ConditionalAction,
+        'download': DownloadAction,
+        'download_link': DownloadLinkAction,
+        'download_media': DownloadMediaAction,
     }
 
     def __init__(self, workflow_file, headless=False, browser_type='chromium'):

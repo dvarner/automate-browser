@@ -10,6 +10,7 @@ A simple, powerful workflow automation system using YAML configuration files. No
 - 📊 **Data extraction** - Scrape tables and data from pages
 - 💾 **CSV export** - Save extracted data to CSV files
 - 📸 **Screenshots** - Capture page states
+- 📥 **Download files** - Download PDFs, images, videos, and any files to custom directories
 - ⚡ **Fast and simple** - No complex GUI, just edit YAML files
 
 ## Installation
@@ -164,6 +165,43 @@ Pause workflow for human interaction
   reason: "Complete login"
   continue_url: "/dashboard"
   timeout: 120
+```
+
+### File Downloads
+
+#### `download`
+Click element and wait for download (browser-triggered downloads)
+
+```yaml
+- action: download
+  selector: "a.download-button"      # Element that triggers download
+  destination: "D:/Downloads/"       # Where to save (default: results/)
+  save_as: "report.pdf"              # Optional: rename file
+  timeout: 60                        # Download timeout in seconds
+  name: "my_download"                # Optional: store info in data_store
+```
+
+#### `download_link`
+Download file from link without clicking (programmatic download)
+
+```yaml
+- action: download_link
+  selector: "a[href$='.pdf']"        # Link selector
+  destination: "D:/Reports/"         # Custom save location
+  save_as: "custom-name.pdf"         # Optional: rename file
+  timeout: 60                        # Download timeout
+```
+
+#### `download_media`
+Download image or video from page
+
+```yaml
+- action: download_media
+  selector: "img.hero-image"         # Image or video selector
+  type: "image"                      # 'image' or 'video'
+  destination: "D:/Media/Images/"    # Custom save location
+  save_as: "hero.jpg"                # Optional: rename file
+  timeout: 60                        # Download timeout
 ```
 
 ### Utility
