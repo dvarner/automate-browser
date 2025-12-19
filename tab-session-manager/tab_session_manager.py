@@ -7,6 +7,7 @@ Track browser tabs, save sessions to JSON, and restore them later.
 import argparse
 import json
 import sys
+import os
 import threading
 from datetime import datetime
 from pathlib import Path
@@ -106,24 +107,49 @@ class TabSessionManager:
             # Firefox uses different args
             firefox_args = []
             if incognito_mode:
-                firefox_args.append('-private')
+                firefox_args.append('--private-window')  # Correct Firefox private mode flag
             self.browser = self.playwright.firefox.launch(
                 headless=False,
                 args=firefox_args
             )
-        elif browser_type_lower in ['chrome', 'brave', 'chromium']:
-            # Chromium-based browsers (Chrome, Brave, Chromium)
-            channel = None
-            if browser_type_lower == 'chrome':
-                channel = 'chrome'
-            elif browser_type_lower == 'brave':
-                channel = 'brave'  # Note: May require Brave to be installed
+        elif browser_type_lower in ['chrome', 'chromium', 'brave']:
+            # Chromium-based browsers (Chrome, Chromium, Brave)
+            launch_kwargs = {
+                'headless': False,
+                'args': launch_args
+            }
 
-            self.browser = self.playwright.chromium.launch(
-                headless=False,
-                channel=channel,
-                args=launch_args
-            )
+            if browser_type_lower == 'chrome':
+                launch_kwargs['channel'] = 'chrome'
+            elif browser_type_lower == 'brave':
+                # Brave: try common installation paths
+                import platform
+                brave_paths = []
+                if platform.system() == 'Windows':
+                    brave_paths = [
+                        r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
+                        r"C:\Program Files (x86)\BraveSoftware\Brave-Browser\Application\brave.exe",
+                        os.path.expandvars(r"%LOCALAPPDATA%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+                    ]
+                elif platform.system() == 'Darwin':  # macOS
+                    brave_paths = ["/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"]
+                elif platform.system() == 'Linux':
+                    brave_paths = ["/usr/bin/brave-browser", "/usr/bin/brave"]
+
+                # Find first existing path
+                brave_exe = None
+                for path in brave_paths:
+                    if os.path.exists(path):
+                        brave_exe = path
+                        break
+
+                if brave_exe:
+                    launch_kwargs['executable_path'] = brave_exe
+                else:
+                    print("[WARNING] Brave browser not found, falling back to Chromium")
+            # chromium uses default (no channel or executable_path)
+
+            self.browser = self.playwright.chromium.launch(**launch_kwargs)
         else:
             # Default to chromium
             self.browser = self.playwright.chromium.launch(

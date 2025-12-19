@@ -5,6 +5,7 @@ Provides Qt signals for events and thread-safe operations.
 
 import sys
 import json
+import threading
 from pathlib import Path
 from datetime import datetime
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
@@ -29,6 +30,7 @@ class SessionManagerWrapper(QObject):
         self.sessions_dir = Path(__file__).parent.parent.parent / 'sessions'
         self.sessions_dir.mkdir(exist_ok=True)
         self._browser_running = False
+        self.active_manager = None  # Keep reference to prevent garbage collection
 
     def get_sessions(self):
         """Get all saved sessions.
@@ -119,17 +121,32 @@ class SessionManagerWrapper(QObject):
         """
         try:
             # Create TabSessionManager instance
-            manager = TabSessionManager(auto_save_enabled=True, auto_save_interval=3.0)
+            self.active_manager = TabSessionManager(auto_save_enabled=True, auto_save_interval=3.0)
 
-            # Load the session (this will launch browser)
-            success = manager.load_session(session_name, group_filter=group_filter)
+            # Load the session in a separate thread to avoid asyncio loop conflict
+            load_success = [False]
+            load_error = [None]
 
-            if success:
+            def load_thread():
+                try:
+                    result = self.active_manager.load_session(session_name, group_filter=group_filter)
+                    load_success[0] = result
+                except Exception as e:
+                    load_error[0] = e
+
+            thread = threading.Thread(target=load_thread)
+            thread.start()
+            thread.join(timeout=30)
+
+            if load_error[0]:
+                raise load_error[0]
+
+            if load_success[0]:
                 self.session_loaded.emit(session_name)
                 self._browser_running = True
                 self.browser_status_changed.emit(True)
 
-            return success
+            return load_success[0]
         except Exception as e:
             print(f"Error loading session: {e}")
             return False
@@ -148,25 +165,57 @@ class SessionManagerWrapper(QObject):
             bool: True if successful, False otherwise
         """
         try:
+            print(f"[DEBUG] Creating session: {session_name}")
+            print(f"[DEBUG] Browser: {browser_type}, Incognito: {incognito_mode}")
+
             # Validate session name
             if not self._validate_session_name(session_name):
+                print(f"[ERROR] Session name validation failed: {session_name}")
                 return False
 
+            print("[DEBUG] Session name validated")
+
             # Create TabSessionManager instance
-            manager = TabSessionManager(
+            self.active_manager = TabSessionManager(
                 auto_save_enabled=auto_save,
                 auto_save_interval=auto_save_interval
             )
+            print("[DEBUG] TabSessionManager created")
 
-            # Launch browser with specified options
-            manager.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode)
+            # Launch browser in a separate thread to avoid asyncio loop conflict
+            print(f"[DEBUG] Launching browser: {browser_type}")
+
+            launch_success = [False]  # Use list to allow modification in thread
+            launch_error = [None]
+
+            def launch_thread():
+                try:
+                    self.active_manager.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode)
+                    launch_success[0] = True
+                except Exception as e:
+                    launch_error[0] = e
+
+            thread = threading.Thread(target=launch_thread)
+            thread.start()
+            thread.join(timeout=30)  # Wait up to 30 seconds
+
+            if launch_error[0]:
+                raise launch_error[0]
+
+            if not launch_success[0]:
+                raise Exception("Browser launch timed out")
+
+            print("[DEBUG] Browser launched successfully")
 
             self._browser_running = True
             self.browser_status_changed.emit(True)
 
             return True
         except Exception as e:
-            print(f"Error creating new session: {e}")
+            import traceback
+            print(f"[ERROR] Error creating new session: {e}")
+            print(f"[ERROR] Traceback:")
+            traceback.print_exc()
             return False
 
     def delete_session(self, session_name):
