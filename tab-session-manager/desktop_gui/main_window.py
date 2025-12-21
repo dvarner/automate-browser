@@ -4,7 +4,7 @@ Main window for Browser Session Manager desktop application.
 
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QToolBar, QStatusBar, QMenuBar, QMessageBox, QLabel
+    QToolBar, QStatusBar, QMenuBar, QMessageBox, QLabel, QTabWidget
 )
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtCore import Qt, QSettings, QTimer
@@ -12,6 +12,7 @@ from PyQt6.QtCore import Qt, QSettings, QTimer
 from widgets.session_list import SessionListWidget
 from widgets.search_bar import SearchBar
 from widgets.status_bar import BrowserStatusBar
+from widgets.workflows_widget import WorkflowsWidget
 from dialogs.new_session import NewSessionDialog
 from dialogs.confirm_delete import ConfirmDeleteDialog
 from dialogs.about_dialog import AboutDialog
@@ -35,18 +36,14 @@ class MainWindow(QMainWindow):
 
     def init_ui(self):
         """Initialize the user interface."""
-        self.setWindowTitle("Browser Session Manager")
+        self.setWindowTitle("Browser Automation Manager")
         self.setMinimumSize(1200, 700)
 
         # Create central widget with modern styling
         central_widget = QWidget()
         central_widget.setStyleSheet("""
             QWidget {
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:1,
-                    stop:0 #f0f4f8,
-                    stop:1 #e6f2ff
-                );
+                background-color: #ffffff;
             }
         """)
         self.setCentralWidget(central_widget)
@@ -56,17 +53,62 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Create search bar
+        # Create tab widget
+        self.tab_widget = QTabWidget()
+        self.tab_widget.setStyleSheet("""
+            QTabWidget::pane {
+                border: 2px solid #d0d0d0;
+                background: #f5f5f5;
+                border-radius: 4px;
+            }
+            QTabBar::tab {
+                background: #e8e8e8;
+                color: #333333;
+                padding: 12px 24px;
+                margin: 2px;
+                margin-bottom: -2px;
+                border: 2px solid #d0d0d0;
+                border-bottom: none;
+                border-top-left-radius: 6px;
+                border-top-right-radius: 6px;
+                font-size: 11pt;
+            }
+            QTabBar::tab:selected {
+                background: #f5f5f5;
+                color: #000000;
+                font-weight: bold;
+                border-bottom: 2px solid #f5f5f5;
+            }
+            QTabBar::tab:hover:!selected {
+                background: #d8d8d8;
+            }
+        """)
+        layout.addWidget(self.tab_widget)
+
+        # Create Sessions tab
+        sessions_tab = QWidget()
+        sessions_layout = QVBoxLayout(sessions_tab)
+        sessions_layout.setContentsMargins(0, 0, 0, 0)
+        sessions_layout.setSpacing(0)
+
+        # Create search bar for sessions tab
         self.search_bar = SearchBar()
         self.search_bar.search_changed.connect(self.on_search_changed)
         self.search_bar.sort_changed.connect(self.on_sort_changed)
-        layout.addWidget(self.search_bar)
+        sessions_layout.addWidget(self.search_bar)
 
         # Create session list widget
         self.session_list = SessionListWidget(self.session_manager)
         self.session_list.session_loaded.connect(self.on_session_loaded)
         self.session_list.session_deleted.connect(self.on_session_deleted)
-        layout.addWidget(self.session_list)
+        sessions_layout.addWidget(self.session_list)
+
+        # Add sessions tab
+        self.tab_widget.addTab(sessions_tab, "Sessions")
+
+        # Create Workflows tab
+        self.workflows_widget = WorkflowsWidget()
+        self.tab_widget.addTab(self.workflows_widget, "Workflows")
 
         # Create menu bar
         self.create_menu_bar()

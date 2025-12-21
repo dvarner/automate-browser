@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QLineEdit, QCheckBox, QSpinBox, QPushButton, QMessageBox, QComboBox
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPalette, QColor
 
 
 class NewSessionDialog(QDialog):
@@ -28,34 +29,70 @@ class NewSessionDialog(QDialog):
 
     def init_ui(self):
         """Initialize the UI."""
+        # Set dialog palette for reliable colors
+        palette = self.palette()
+        palette.setColor(QPalette.ColorRole.Window, QColor("#ffffff"))
+        palette.setColor(QPalette.ColorRole.WindowText, QColor("#000000"))
+        palette.setColor(QPalette.ColorRole.Base, QColor("#ffffff"))
+        palette.setColor(QPalette.ColorRole.Text, QColor("#000000"))
+        palette.setColor(QPalette.ColorRole.Button, QColor("#e8e8e8"))
+        palette.setColor(QPalette.ColorRole.ButtonText, QColor("#000000"))
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
+
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
 
         # Session name input
         name_label = QLabel("Session Name:")
-        name_label.setStyleSheet("color: black;")
+        name_label.setStyleSheet("color: #000000; font-weight: bold; font-size: 11pt;")
         layout.addWidget(name_label)
 
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("e.g., my-work-session")
-        self.name_input.setStyleSheet("QLineEdit { color: black; }")
+        self.name_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #ffffff;
+                color: #000000;
+                border: 2px solid #bdbdbd;
+                padding: 8px;
+                border-radius: 4px;
+                font-size: 10pt;
+            }
+            QLineEdit:focus {
+                border: 2px solid #1976D2;
+            }
+        """)
         layout.addWidget(self.name_input)
 
         # Validation hint
         hint_label = QLabel("Only letters, numbers, dashes, and underscores allowed")
-        hint_label.setStyleSheet("color: #666; font-size: 9pt;")
+        hint_label.setStyleSheet("color: #616161; font-size: 9pt; font-style: italic;")
         layout.addWidget(hint_label)
 
         # Browser selection
         browser_layout = QHBoxLayout()
         browser_label = QLabel("Browser:")
-        browser_label.setStyleSheet("color: black;")
+        browser_label.setStyleSheet("color: #000000; font-weight: bold; font-size: 11pt;")
         browser_layout.addWidget(browser_label)
 
         self.browser_combo = QComboBox()
         self.browser_combo.addItems(["Chrome", "Brave", "Firefox", "Chromium"])
         self.browser_combo.setCurrentText("Chrome")
-        self.browser_combo.setStyleSheet("QComboBox { color: black; }")
+        self.browser_combo.setStyleSheet("""
+            QComboBox {
+                background-color: #ffffff;
+                color: #000000;
+                border: 2px solid #bdbdbd;
+                padding: 6px;
+                border-radius: 4px;
+                font-size: 10pt;
+            }
+            QComboBox:hover {
+                border: 2px solid #1976D2;
+            }
+        """)
         browser_layout.addWidget(self.browser_combo)
         browser_layout.addStretch()
 
@@ -64,25 +101,36 @@ class NewSessionDialog(QDialog):
         # Incognito mode checkbox
         self.incognito_checkbox = QCheckBox("Launch in Incognito/Private mode")
         self.incognito_checkbox.setChecked(False)
-        self.incognito_checkbox.setStyleSheet("color: black;")
+        self.incognito_checkbox.setStyleSheet("color: #000000; font-size: 10pt; font-weight: bold;")
         layout.addWidget(self.incognito_checkbox)
 
         # Auto-save checkbox
         self.auto_save_checkbox = QCheckBox("Enable auto-save")
         self.auto_save_checkbox.setChecked(True)
+        self.auto_save_checkbox.setStyleSheet("color: #000000; font-size: 10pt; font-weight: bold;")
         self.auto_save_checkbox.stateChanged.connect(self.on_auto_save_toggled)
         layout.addWidget(self.auto_save_checkbox)
 
         # Auto-save interval
         interval_layout = QHBoxLayout()
         interval_label = QLabel("Auto-save interval (seconds):")
-        interval_label.setStyleSheet("color: black;")
+        interval_label.setStyleSheet("color: #000000; font-size: 10pt;")
         interval_layout.addWidget(interval_label)
 
         self.interval_spin = QSpinBox()
         self.interval_spin.setMinimum(1)
         self.interval_spin.setMaximum(60)
         self.interval_spin.setValue(3)
+        self.interval_spin.setStyleSheet("""
+            QSpinBox {
+                background-color: #ffffff;
+                color: #000000;
+                border: 2px solid #bdbdbd;
+                padding: 6px;
+                border-radius: 4px;
+                font-size: 10pt;
+            }
+        """)
         interval_layout.addWidget(self.interval_spin)
         interval_layout.addStretch()
 
@@ -93,12 +141,40 @@ class NewSessionDialog(QDialog):
         button_layout.addStretch()
 
         cancel_button = QPushButton("Cancel")
-        cancel_button.setStyleSheet("QPushButton { color: black; }")
+        cancel_button.setStyleSheet("""
+            QPushButton {
+                background-color: #757575;
+                color: #ffffff;
+                border: 2px solid #424242;
+                padding: 10px 20px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 10pt;
+            }
+            QPushButton:hover {
+                background-color: #9E9E9E;
+                border: 2px solid #616161;
+            }
+        """)
         cancel_button.clicked.connect(self.reject)
         button_layout.addWidget(cancel_button)
 
         create_button = QPushButton("Create")
-        create_button.setStyleSheet("QPushButton { color: black; }")
+        create_button.setStyleSheet("""
+            QPushButton {
+                background-color: #2E7D32;
+                color: #ffffff;
+                border: 2px solid #1B5E20;
+                padding: 10px 20px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 10pt;
+            }
+            QPushButton:hover {
+                background-color: #388E3C;
+                border: 2px solid #2E7D32;
+            }
+        """)
         create_button.setDefault(True)
         create_button.clicked.connect(self.on_create)
         button_layout.addWidget(create_button)

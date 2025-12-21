@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QPushButton, QTreeWidget, QTreeWidgetItem, QMessageBox
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPalette, QColor
 
 
 class SessionDetailDialog(QDialog):
@@ -26,22 +27,67 @@ class SessionDetailDialog(QDialog):
 
     def init_ui(self):
         """Initialize the UI."""
+        # Set dialog palette for reliable colors
+        palette = self.palette()
+        palette.setColor(QPalette.ColorRole.Window, QColor("#ffffff"))
+        palette.setColor(QPalette.ColorRole.WindowText, QColor("#000000"))
+        palette.setColor(QPalette.ColorRole.Base, QColor("#ffffff"))
+        palette.setColor(QPalette.ColorRole.Text, QColor("#000000"))
+        palette.setColor(QPalette.ColorRole.Button, QColor("#e8e8e8"))
+        palette.setColor(QPalette.ColorRole.ButtonText, QColor("#000000"))
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
+
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
 
         # Session info header
         info_text = f"Session: {self.session_name}\n"
         info_text += f"Created: {self.details.get('created_at', 'Unknown')}"
 
         info_label = QLabel(info_text)
-        info_label.setStyleSheet("font-weight: bold; font-size: 11pt; color: black;")
+        info_label.setStyleSheet("""
+            QLabel {
+                font-weight: bold;
+                font-size: 12pt;
+                color: #000000;
+                background-color: #f5f5f5;
+                padding: 10px;
+                border: 2px solid #bdbdbd;
+                border-radius: 6px;
+            }
+        """)
         layout.addWidget(info_label)
 
         # Tree widget for groups and tabs
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Title", "URL"])
         self.tree.setColumnWidth(0, 300)
-        self.tree.setStyleSheet("QTreeWidget { color: black; } QTreeWidget::item { color: black; }")
+        self.tree.setStyleSheet("""
+            QTreeWidget {
+                background-color: #ffffff;
+                color: #000000;
+                border: 2px solid #bdbdbd;
+                border-radius: 6px;
+                font-size: 10pt;
+            }
+            QTreeWidget::item {
+                color: #000000;
+                padding: 4px;
+            }
+            QTreeWidget::item:selected {
+                background-color: #1976D2;
+                color: #ffffff;
+            }
+            QHeaderView::section {
+                background-color: #e8e8e8;
+                color: #000000;
+                padding: 6px;
+                border: 1px solid #bdbdbd;
+                font-weight: bold;
+            }
+        """)
         layout.addWidget(self.tree)
 
         # Populate tree
@@ -51,14 +97,42 @@ class SessionDetailDialog(QDialog):
         button_layout = QHBoxLayout()
 
         load_all_button = QPushButton("Load Entire Session")
-        load_all_button.setStyleSheet("QPushButton { color: black; }")
+        load_all_button.setStyleSheet("""
+            QPushButton {
+                background-color: #2E7D32;
+                color: #ffffff;
+                border: 2px solid #1B5E20;
+                padding: 10px 20px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 10pt;
+            }
+            QPushButton:hover {
+                background-color: #388E3C;
+                border: 2px solid #2E7D32;
+            }
+        """)
         load_all_button.clicked.connect(self.on_load_all)
         button_layout.addWidget(load_all_button)
 
         button_layout.addStretch()
 
         close_button = QPushButton("Close")
-        close_button.setStyleSheet("QPushButton { color: black; }")
+        close_button.setStyleSheet("""
+            QPushButton {
+                background-color: #757575;
+                color: #ffffff;
+                border: 2px solid #424242;
+                padding: 10px 20px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 10pt;
+            }
+            QPushButton:hover {
+                background-color: #9E9E9E;
+                border: 2px solid #616161;
+            }
+        """)
         close_button.clicked.connect(self.accept)
         button_layout.addWidget(close_button)
 
