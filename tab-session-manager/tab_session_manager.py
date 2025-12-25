@@ -132,7 +132,8 @@ class TabSessionManager:
                 self.context = self.playwright.firefox.launch_persistent_context(
                     str(profile_path),
                     headless=False,
-                    args=firefox_args
+                    args=firefox_args,
+                    no_viewport=True
                 )
                 self.browser = self.context.browser
             else:
@@ -142,7 +143,8 @@ class TabSessionManager:
                     args=firefox_args
                 )
                 self.context = self.browser.new_context(
-                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    no_viewport=True
                 )
 
         elif browser_type_lower in ['chrome', 'chromium', 'brave']:
@@ -196,14 +198,16 @@ class TabSessionManager:
                 self.context = self.playwright.chromium.launch_persistent_context(
                     str(profile_path),
                     **launch_kwargs,
-                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    no_viewport=True
                 )
                 self.browser = self.context.browser
             else:
                 # Launch without profile (current behavior)
                 self.browser = self.playwright.chromium.launch(**launch_kwargs)
                 self.context = self.browser.new_context(
-                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    no_viewport=True
                 )
         else:
             # Default to chromium
@@ -221,13 +225,15 @@ class TabSessionManager:
                     str(profile_path),
                     headless=False,
                     args=launch_args,
-                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    no_viewport=True
                 )
                 self.browser = self.context.browser
             else:
                 self.browser = self.playwright.chromium.launch(headless=False, args=launch_args)
                 self.context = self.browser.new_context(
-                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    no_viewport=True
                 )
 
         # Open initial blank page
