@@ -1,0 +1,40 @@
+{
+  "template_name": "example-product-listing",
+  "version": "1.0",
+  "created_at": "2025-01-15T10:00:00Z",
+  "container": {
+    "selector": "div.product-item",
+    "type": "repeating"
+  },
+  "fields": [
+    {
+      "name": "title",
+      "selector": "h3.product-title",
+      "attribute": "text",
+      "required": true
+    },
+    {
+      "name": "price",
+      "selector": "span.price",
+      "attribute": "text",
+      "required": true
+    },
+    {
+      "name": "image",
+      "selector": "img",
+      "attribute": "src",
+      "required": false
+    },
+    {
+      "name": "link",
+      "selector": "a",
+      "attribute": "href",
+      "required": true
+    }
+  ],
+  "pagination": {
+    "enabled": true,
+    "next_button": "a.next-page",
+    "type": "manual"
+  }
+}

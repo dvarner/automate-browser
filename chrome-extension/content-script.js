@@ -4,6 +4,11 @@
 let isRecording = false;
 let recordingIndicator = null;
 
+// Template Building State
+let isTemplateBuilding = false;
+let selectedElement = null;
+let contextMenu = null;
+
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'START_RECORDING') {
@@ -12,6 +17,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.type === 'STOP_RECORDING') {
     stopRecording();
     sendResponse({ success: true });
+  } else if (message.type === 'START_TEMPLATE_BUILDING') {
+    startTemplateBuilding();
+    sendResponse({ success: true });
+  } else if (message.type === 'STOP_TEMPLATE_BUILDING') {
+    stopTemplateBuilding();
+    sendResponse({ success: true });
+  } else if (message.type === 'DETECT_CONTAINER_AND_ITEMS') {
+    const result = detectContainerAndItems(message.fieldSelectors);
+    sendResponse({ success: true, ...result });
   }
   return true;
 });
@@ -279,4 +293,252 @@ function highlightElement(element) {
   setTimeout(() => {
     element.style.outline = originalOutline;
   }, 500);
+}
+
+// ============================================================================
+// TEMPLATE BUILDING MODE
+// ============================================================================
+
+function startTemplateBuilding() {
+  isTemplateBuilding = true;
+  showTemplateIndicator();
+  document.addEventListener('contextmenu', templateRightClickHandler, true);
+}
+
+function stopTemplateBuilding() {
+  isTemplateBuilding = false;
+  hideTemplateIndicator();
+  document.removeEventListener('contextmenu', templateRightClickHandler, true);
+  removeContextMenu();
+}
+
+function showTemplateIndicator() {
+  const indicator = document.createElement('div');
+  indicator.id = 'template-builder-indicator';
+  indicator.innerHTML = '🎯 Template Building Mode';
+  indicator.style.cssText = `
+    position: fixed; top: 20px; right: 20px;
+    background: rgba(255, 152, 0, 0.95); color: white;
+    padding: 10px 16px; border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    z-index: 2147483647;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  `;
+  document.body.appendChild(indicator);
+}
+
+function hideTemplateIndicator() {
+  document.getElementById('template-builder-indicator')?.remove();
+}
+
+const templateRightClickHandler = (e) => {
+  if (!isTemplateBuilding) return;
+  e.preventDefault();
+  e.stopPropagation();
+  selectedElement = e.target;
+  showContextMenu(e.clientX, e.clientY);
+};
+
+function showContextMenu(x, y) {
+  removeContextMenu();
+
+  contextMenu = document.createElement('div');
+  contextMenu.style.cssText = `
+    position: fixed; left: ${x}px; top: ${y}px;
+    background: white; border: 1px solid #e0e0e0;
+    border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 2147483648; min-width: 200px;
+  `;
+
+  const options = [
+    { label: '📝 Extract as Title', field: 'title', attribute: 'text' },
+    { label: '💰 Extract as Price', field: 'price', attribute: 'text' },
+    { label: '📄 Extract as Description', field: 'description', attribute: 'text' },
+    { label: '🖼️ Extract as Image', field: 'image', attribute: 'src' },
+    { label: '🔗 Extract as Link', field: 'link', attribute: 'href' },
+    { label: '✏️ Custom Field...', field: 'custom', attribute: 'text' }
+  ];
+
+  options.forEach(opt => {
+    const item = document.createElement('div');
+    item.textContent = opt.label;
+    item.style.cssText = 'padding: 10px 15px; cursor: pointer;';
+    item.onmouseover = () => item.style.background = '#f5f5f5';
+    item.onmouseout = () => item.style.background = 'white';
+    item.onclick = () => {
+      if (opt.field === 'custom') {
+        const fieldName = prompt('Enter custom field name:');
+        if (fieldName) extractField(fieldName, opt.attribute);
+      } else {
+        extractField(opt.field, opt.attribute);
+      }
+      removeContextMenu();
+    };
+    contextMenu.appendChild(item);
+  });
+
+  document.body.appendChild(contextMenu);
+  setTimeout(() => {
+    document.addEventListener('click', removeContextMenu, { once: true });
+  }, 100);
+}
+
+function removeContextMenu() {
+  contextMenu?.remove();
+  contextMenu = null;
+}
+
+function extractField(fieldName, attribute = 'text') {
+  if (!selectedElement) return;
+
+  const selector = generateSelector(selectedElement);
+  const field = {
+    name: fieldName,
+    selector: selector,
+    attribute: attribute,
+    required: true
+  };
+
+  chrome.runtime.sendMessage({
+    type: 'ADD_TEMPLATE_FIELD',
+    field: field
+  });
+
+  // Visual feedback
+  const original = selectedElement.style.outline;
+  selectedElement.style.outline = '3px solid #ff9800';
+  setTimeout(() => { selectedElement.style.outline = original; }, 1000);
+
+  selectedElement = null;
+}
+
+// ============================================================================
+// CONTAINER DETECTION ALGORITHM
+// ============================================================================
+
+function detectContainerAndItems(fieldSelectors) {
+  if (!fieldSelectors || fieldSelectors.length === 0) {
+    return { containerSelector: null, items: [] };
+  }
+
+  // Get elements for first field
+  const firstField = fieldSelectors[0];
+  const firstElements = Array.from(document.querySelectorAll(firstField.selector));
+
+  if (firstElements.length === 0) {
+    return { containerSelector: null, items: [] };
+  }
+
+  // Find common parent container
+  const containerSelector = findCommonParentContainer(firstElements);
+  if (!containerSelector) {
+    return { containerSelector: null, items: [] };
+  }
+
+  // Find all container instances
+  const containers = Array.from(document.querySelectorAll(containerSelector));
+
+  // Extract data from each container
+  const items = [];
+  containers.forEach((container, idx) => {
+    const itemData = { _index: idx };
+    let allFieldsFound = true;
+
+    fieldSelectors.forEach(field => {
+      const relativeSelector = makeRelativeSelector(field.selector, containerSelector);
+      const elem = container.querySelector(relativeSelector);
+
+      if (elem) {
+        if (field.attribute === 'text') {
+          itemData[field.name] = elem.innerText.trim().substring(0, 50);
+        } else {
+          itemData[field.name] = elem.getAttribute(field.attribute)?.substring(0, 50) || null;
+        }
+      } else if (field.required) {
+        allFieldsFound = false;
+      }
+    });
+
+    if (allFieldsFound) {
+      items.push(itemData);
+    }
+  });
+
+  return {
+    containerSelector: containerSelector,
+    items: items,
+    count: items.length
+  };
+}
+
+function findCommonParentContainer(elements) {
+  // For single element, go up 2-3 levels to find repeating parent
+  if (elements.length < 2) {
+    let parent = elements[0].parentElement;
+    for (let level = 0; level < 3; level++) {
+      if (!parent) break;
+
+      const selector = generateContainerSelector(parent);
+      const matches = document.querySelectorAll(selector);
+
+      // Check if this selector finds multiple instances (2-50)
+      if (matches.length >= 2 && matches.length <= 50) {
+        return selector;
+      }
+
+      parent = parent.parentElement;
+    }
+    return null;
+  }
+
+  // Find common ancestor for multiple elements
+  let candidate = elements[0].parentElement;
+  for (let level = 0; level < 3 && candidate; level++) {
+    let isCommonParent = elements.every(elem => candidate.contains(elem));
+
+    if (isCommonParent) {
+      const selector = generateContainerSelector(candidate);
+      const matches = document.querySelectorAll(selector);
+      if (matches.length >= 2) {
+        return selector;
+      }
+    }
+
+    candidate = candidate.parentElement;
+  }
+
+  return null;
+}
+
+function generateContainerSelector(element) {
+  // Priority: class-based > tag + class
+  if (element.className && typeof element.className === 'string') {
+    const classes = element.className.trim().split(/\s+/).filter(c => c);
+    if (classes.length > 0) {
+      // Try single class
+      for (let cls of classes) {
+        const selector = `.${cls}`;
+        const matches = document.querySelectorAll(selector);
+        if (matches.length >= 2 && matches.length <= 50) {
+          return selector;
+        }
+      }
+      // Try tag + class
+      return `${element.tagName.toLowerCase()}.${classes[0]}`;
+    }
+  }
+
+  // Fallback: tag name
+  return element.tagName.toLowerCase();
+}
+
+function makeRelativeSelector(absoluteSelector, containerSelector) {
+  // Convert absolute selector to relative (within container)
+  if (absoluteSelector.includes(containerSelector)) {
+    return absoluteSelector.replace(containerSelector, '').trim().replace(/^>\s*/, '');
+  }
+
+  // Extract last meaningful part
+  const parts = absoluteSelector.split('>').map(p => p.trim());
+  return parts[parts.length - 1] || absoluteSelector;
 }

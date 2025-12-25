@@ -1,0 +1,27 @@
+name: "Product Scraping with Template"
+browser: "chrome"
+timeout: 30
+
+steps:
+  - action: navigate
+    url: "https://example.com/products"
+
+  - action: wait
+    selector: "div.product-item"
+
+  - action: rate_limit
+    mode: "polite"
+
+  - action: template_extract
+    template: "example-product-listing.json"
+    name: "products"
+    max_pages: 3
+    continue_on_missing: false
+
+  - action: save_json
+    data: "products"
+    file: "products.json"
+
+  - action: save_csv
+    data: "products"
+    file: "products.csv"

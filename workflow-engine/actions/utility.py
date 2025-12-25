@@ -77,6 +77,35 @@ class SaveCSVAction(BaseAction):
             return f"Saved value to {filepath}"
 
 
+class SaveJSONAction(BaseAction):
+    """Save extracted data to JSON file"""
+
+    def description(self):
+        data_name = self.step.get('data', 'data')
+        filename = self.step.get('file', 'output.json')
+        return f"Save '{data_name}' to {filename}"
+
+    def execute(self):
+        import json
+
+        data_name = self.step.get('data')
+        filename = self.step.get('file', 'output.json')
+        destination = self.step.get('destination', 'results')
+
+        if not data_name or data_name not in self.data_store:
+            raise ValueError(f"Data '{data_name}' not found")
+
+        data = self.data_store[data_name]
+
+        filepath = Path(destination) / filename
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        return f"Saved {len(data) if isinstance(data, list) else 1} items to {filepath}"
+
+
 class ConditionalAction(BaseAction):
     """Conditional execution (if/else logic)"""
 
@@ -108,3 +137,40 @@ class ConditionalAction(BaseAction):
 
         else:
             raise ValueError("Conditional action requires 'element_exists' or 'data_exists'")
+
+
+class RateLimitAction(BaseAction):
+    """Add delay with optional jitter (polite scraping)"""
+
+    def description(self):
+        mode = self.step.get('mode', 'polite')
+        seconds = self.step.get('seconds')
+        if seconds:
+            return f"Wait {seconds}s"
+        return f"Rate limit: {mode} mode"
+
+    def execute(self):
+        import time
+        import random
+
+        mode = self.step.get('mode', 'polite')
+        seconds = self.step.get('seconds')
+        jitter = self.step.get('jitter', True)
+
+        if seconds:
+            delay = seconds
+            if jitter:
+                delay += random.uniform(-0.5, 0.5)
+        else:
+            # Predefined modes (respecting "HEAVILY SLOW DOWN" requirement)
+            delays = {
+                'polite': (1.0, 3.0),
+                'normal': (0.5, 1.5),
+                'fast': (0.1, 0.5),
+                'slow': (3.0, 6.0)
+            }
+            min_delay, max_delay = delays.get(mode, (1.0, 3.0))
+            delay = random.uniform(min_delay, max_delay)
+
+        time.sleep(max(0, delay))
+        return f"Waited {delay:.2f}s ({mode} mode)"

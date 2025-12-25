@@ -8,6 +8,16 @@ let recordingState = {
   tabId: null
 };
 
+// Template Builder State
+let templateState = {
+  isBuilding: false,
+  fields: [],  // { name, selector, attribute, required }
+  containerSelector: null,
+  detectedItems: [],
+  paginationSelector: null,
+  tabId: null
+};
+
 // Listen for messages from popup and content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
@@ -57,6 +67,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       } else {
         sendResponse({ success: false, error: 'Invalid index' });
       }
+      break;
+
+    // Template Builder Messages
+    case 'GET_TEMPLATE_STATE':
+      sendResponse(templateState);
+      break;
+
+    case 'START_TEMPLATE_BUILDING':
+      startTemplateBuilding(message.tabId, message.url);
+      sendResponse({ success: true, state: templateState });
+      break;
+
+    case 'STOP_TEMPLATE_BUILDING':
+      stopTemplateBuilding();
+      sendResponse({ success: true });
+      break;
+
+    case 'ADD_TEMPLATE_FIELD':
+      templateState.fields.push(message.field);
+      chrome.runtime.sendMessage({ type: 'TEMPLATE_UPDATED', state: templateState })
+        .catch(() => {});
+      sendResponse({ success: true });
+      break;
+
+    case 'SET_CONTAINER':
+      templateState.containerSelector = message.selector;
+      templateState.detectedItems = message.items || [];
+      sendResponse({ success: true });
       break;
   }
 
@@ -163,6 +201,36 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
   }
 });
+
+// === Template Building Functions ===
+
+async function startTemplateBuilding(tabId, url) {
+  templateState = {
+    isBuilding: true,
+    fields: [],
+    containerSelector: null,
+    detectedItems: [],
+    tabId: tabId
+  };
+
+  await chrome.scripting.executeScript({
+    target: { tabId: tabId },
+    files: ['content-script.js']
+  });
+
+  await chrome.tabs.sendMessage(tabId, { type: 'START_TEMPLATE_BUILDING' });
+}
+
+async function stopTemplateBuilding() {
+  if (templateState.tabId) {
+    try {
+      await chrome.tabs.sendMessage(templateState.tabId, { type: 'STOP_TEMPLATE_BUILDING' });
+    } catch (e) {
+      console.log('[Background] Could not stop template building on tab:', e.message);
+    }
+  }
+  templateState.isBuilding = false;
+}
 
 // Keep service worker alive
 chrome.runtime.onInstalled.addListener(() => {

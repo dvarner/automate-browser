@@ -24,6 +24,7 @@ class NewSessionDialog(QDialog):
         self.auto_save_interval = 3.0
         self.browser_type = "chrome"
         self.incognito_mode = False
+        self.profile_name = ""
 
         self.init_ui()
 
@@ -103,6 +104,37 @@ class NewSessionDialog(QDialog):
         self.incognito_checkbox.setChecked(False)
         self.incognito_checkbox.setStyleSheet("color: #000000; font-size: 10pt; font-weight: bold;")
         layout.addWidget(self.incognito_checkbox)
+
+        # Profile name input
+        profile_layout = QVBoxLayout()
+
+        profile_label = QLabel("Profile Name (optional):")
+        profile_label.setStyleSheet("color: #000000; font-weight: bold; font-size: 11pt;")
+        profile_layout.addWidget(profile_label)
+
+        self.profile_input = QLineEdit()
+        self.profile_input.setPlaceholderText("e.g., work, personal, dev (leave blank for no profile)")
+        self.profile_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #ffffff;
+                color: #000000;
+                border: 2px solid #bdbdbd;
+                padding: 8px;
+                border-radius: 4px;
+                font-size: 10pt;
+            }
+            QLineEdit:focus {
+                border: 2px solid #1976D2;
+            }
+        """)
+        profile_layout.addWidget(self.profile_input)
+
+        # Hint about profiles
+        profile_hint = QLabel("Profile stores cookies, history, and settings. Leave blank for ephemeral session.")
+        profile_hint.setStyleSheet("color: #616161; font-size: 9pt; font-style: italic;")
+        profile_layout.addWidget(profile_hint)
+
+        layout.addLayout(profile_layout)
 
         # Auto-save checkbox
         self.auto_save_checkbox = QCheckBox("Enable auto-save")
@@ -215,6 +247,18 @@ class NewSessionDialog(QDialog):
         self.browser_type = self.browser_combo.currentText().lower()
         self.incognito_mode = self.incognito_checkbox.isChecked()
 
+        # Validate profile name if provided
+        self.profile_name = self.profile_input.text().strip()
+        if self.profile_name:
+            import re
+            if not re.match(r'^[a-zA-Z0-9_-]+$', self.profile_name):
+                QMessageBox.warning(
+                    self,
+                    "Invalid Input",
+                    "Profile name can only contain letters, numbers, dashes, and underscores"
+                )
+                return
+
         self.accept()
 
     def get_session_name(self):
@@ -236,3 +280,7 @@ class NewSessionDialog(QDialog):
     def get_incognito_mode(self):
         """Get incognito mode status."""
         return self.incognito_mode
+
+    def get_profile_name(self):
+        """Get the entered profile name."""
+        return self.profile_name

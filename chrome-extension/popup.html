@@ -17,6 +17,7 @@
     <div class="tab-nav">
       <button class="tab-btn active" data-tab="export">📥 Export Tabs</button>
       <button class="tab-btn" data-tab="record">🔴 Record Workflow</button>
+      <button class="tab-btn" data-tab="scrape">🎯 Scrape Template</button>
     </div>
 
     <main>
@@ -135,6 +136,83 @@
             </div>
 
             <div id="yaml-preview" class="yaml-preview hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scrape Tab Content -->
+      <div id="scrape-tab" class="tab-content">
+        <div class="scraper-section">
+          <div class="scraper-status">
+            <span id="scraper-status" class="status-idle">⚪ Ready to Build Template</span>
+          </div>
+
+          <div class="scraper-controls">
+            <button id="start-template-btn" class="primary-btn">
+              <span class="btn-icon">🎯</span>
+              Start Template Building
+            </button>
+            <button id="stop-template-btn" class="secondary-btn" disabled>
+              <span class="btn-icon">⏹️</span>
+              Stop & Finalize
+            </button>
+          </div>
+
+          <div class="scraper-info">
+            <p><strong>How to build a template:</strong></p>
+            <ol style="font-size: 12px; margin: 8px 0; padding-left: 20px;">
+              <li>Click "Start Template Building"</li>
+              <li>Right-click fields → "Extract as Title/Price/etc"</li>
+              <li>Click "Detect Items" to find similar items</li>
+              <li>Export template for reuse in workflows</li>
+            </ol>
+          </div>
+
+          <!-- Template Fields Section -->
+          <div id="template-fields-section" class="template-fields-section hidden">
+            <div class="fields-header">
+              <h3>Template Fields (<span id="field-count">0</span>)</h3>
+              <button id="detect-items-btn" class="primary-btn">🔍 Detect Items</button>
+            </div>
+
+            <div id="fields-list" class="fields-list">
+              <p class="no-actions">No fields captured yet</p>
+            </div>
+
+            <div class="detection-results">
+              <h4>Detected Items: <span id="detected-count">0</span></h4>
+              <div id="detected-preview" class="detected-preview"></div>
+            </div>
+
+            <!-- Template Configuration -->
+            <div class="template-config">
+              <label for="template-name">Template Name:</label>
+              <input type="text" id="template-name" placeholder="my-template" value="scrape-template">
+
+              <div class="options-section">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="pagination-enabled">
+                  <span>Enable pagination (manual next page click)</span>
+                </label>
+              </div>
+
+              <label for="next-page-selector">Next Page Button Selector:</label>
+              <input type="text" id="next-page-selector" placeholder="a.next-page">
+            </div>
+
+            <!-- Export Buttons -->
+            <div class="export-buttons">
+              <button id="preview-template-btn" class="secondary-btn">
+                <span class="btn-icon">👁️</span>
+                Preview Template
+              </button>
+              <button id="export-template-btn" class="primary-btn">
+                <span class="btn-icon">📥</span>
+                Export Template
+              </button>
+            </div>
+
+            <div id="template-preview" class="yaml-preview hidden"></div>
           </div>
         </div>
       </div>

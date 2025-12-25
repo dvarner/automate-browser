@@ -44,7 +44,19 @@ class SessionDetailDialog(QDialog):
 
         # Session info header
         info_text = f"Session: {self.session_name}\n"
-        info_text += f"Created: {self.details.get('created_at', 'Unknown')}"
+        info_text += f"Created: {self.details.get('created_at', 'Unknown')}\n"
+
+        # Add browser info
+        browser_type = self.details.get('browser_type', 'Unknown')
+        profile_name = self.details.get('profile_name')
+        incognito_mode = self.details.get('incognito_mode', False)
+
+        if profile_name:
+            info_text += f"Browser: {browser_type.title()} (Profile: {profile_name})"
+        elif incognito_mode:
+            info_text += f"Browser: {browser_type.title()} (Incognito)"
+        else:
+            info_text += f"Browser: {browser_type.title()}"
 
         info_label = QLabel(info_text)
         info_label.setStyleSheet("""

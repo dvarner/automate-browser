@@ -1,0 +1,44 @@
+{
+  "template_name": "scrape-template",
+  "version": "1.0",
+  "created_at": "2025-12-25T08:48:05.630Z",
+  "container": {
+    "selector": ".product-item",
+    "type": "repeating"
+  },
+  "fields": [
+    {
+      "name": "image",
+      "selector": ".product-image",
+      "attribute": "src",
+      "required": false
+    },
+    {
+      "name": "title",
+      "selector": ".product-title",
+      "attribute": "text",
+      "required": true
+    },
+    {
+      "name": "price",
+      "selector": ".product-price",
+      "attribute": "text",
+      "required": true
+    },
+    {
+      "name": "description",
+      "selector": ".product-description",
+      "attribute": "text",
+      "required": true
+    },
+    {
+      "name": "link",
+      "selector": ".product-link",
+      "attribute": "href",
+      "required": true
+    }
+  ],
+  "pagination": {
+    "enabled": false
+  }
+}

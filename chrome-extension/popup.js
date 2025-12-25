@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   generateDefaultSessionName();
   await loadRecordingState();
+  await loadTemplateState();
   setupTabSwitching();
 });
 
@@ -317,6 +318,13 @@ function setupTabSwitching() {
   document.getElementById('clear-actions-btn').addEventListener('click', handleClearActions);
   document.getElementById('preview-yaml-btn').addEventListener('click', handlePreviewYAML);
   document.getElementById('export-yaml-btn').addEventListener('click', handleExportYAML);
+
+  // Setup scraper event listeners
+  document.getElementById('start-template-btn').addEventListener('click', handleStartTemplateBuilding);
+  document.getElementById('stop-template-btn').addEventListener('click', handleStopTemplateBuilding);
+  document.getElementById('detect-items-btn').addEventListener('click', handleDetectItems);
+  document.getElementById('preview-template-btn').addEventListener('click', handlePreviewTemplate);
+  document.getElementById('export-template-btn').addEventListener('click', handleExportTemplate);
 }
 
 // Load recording state from background
@@ -532,6 +540,159 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('[Popup] Actions updated, new count:', message.actions.length);
     recordingState.actions = message.actions;
     updateRecordingUI();
+  } else if (message.type === 'TEMPLATE_UPDATED') {
+    templateState = message.state;
+    updateTemplateUI();
   }
   return true;
 });
+
+// ============================================================================
+// TEMPLATE BUILDER FUNCTIONS
+// ============================================================================
+
+let templateState = null;
+
+async function loadTemplateState() {
+  const response = await chrome.runtime.sendMessage({ type: 'GET_TEMPLATE_STATE' });
+  templateState = response;
+  updateTemplateUI();
+}
+
+function updateTemplateUI() {
+  if (!templateState) return;
+
+  const statusEl = document.getElementById('scraper-status');
+  const startBtn = document.getElementById('start-template-btn');
+  const stopBtn = document.getElementById('stop-template-btn');
+  const fieldsSection = document.getElementById('template-fields-section');
+
+  if (templateState.isBuilding) {
+    statusEl.textContent = '🎯 Building Template...';
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+  } else {
+    statusEl.textContent = '⚪ Ready to Build Template';
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  }
+
+  if (templateState.fields && templateState.fields.length > 0) {
+    fieldsSection.classList.remove('hidden');
+    renderTemplateFields();
+  } else {
+    fieldsSection.classList.add('hidden');
+  }
+}
+
+async function handleStartTemplateBuilding() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+  const response = await chrome.runtime.sendMessage({
+    type: 'START_TEMPLATE_BUILDING',
+    tabId: tab.id,
+    url: tab.url
+  });
+
+  templateState = response.state;
+  updateTemplateUI();
+}
+
+async function handleStopTemplateBuilding() {
+  await chrome.runtime.sendMessage({ type: 'STOP_TEMPLATE_BUILDING' });
+  await loadTemplateState();
+}
+
+async function handleDetectItems() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+  const response = await chrome.tabs.sendMessage(tab.id, {
+    type: 'DETECT_CONTAINER_AND_ITEMS',
+    fieldSelectors: templateState.fields
+  });
+
+  await chrome.runtime.sendMessage({
+    type: 'SET_CONTAINER',
+    selector: response.containerSelector,
+    items: response.items
+  });
+
+  templateState.containerSelector = response.containerSelector;
+  templateState.detectedItems = response.items;
+
+  document.getElementById('detected-count').textContent = response.count || 0;
+
+  let preview = `Container: ${response.containerSelector}\n\n`;
+  preview += `Found ${response.count} items\n`;
+  document.getElementById('detected-preview').textContent = preview;
+}
+
+function renderTemplateFields() {
+  const fieldsList = document.getElementById('fields-list');
+  const fieldCount = document.getElementById('field-count');
+
+  fieldCount.textContent = templateState.fields.length;
+
+  let html = '';
+  templateState.fields.forEach((field, idx) => {
+    html += `
+      <div class="field-item">
+        <div class="field-name">${field.name}</div>
+        <div class="field-selector">${field.selector}</div>
+      </div>
+    `;
+  });
+
+  fieldsList.innerHTML = html;
+}
+
+function handlePreviewTemplate() {
+  const templateName = document.getElementById('template-name').value || 'scrape-template';
+  const template = buildTemplateJSON(templateName);
+
+  const previewEl = document.getElementById('template-preview');
+  previewEl.innerHTML = `<pre>${JSON.stringify(template, null, 2)}</pre>`;
+  previewEl.classList.remove('hidden');
+}
+
+function handleExportTemplate() {
+  const templateName = document.getElementById('template-name').value || 'scrape-template';
+  const template = buildTemplateJSON(templateName);
+
+  const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  chrome.downloads.download({
+    url: url,
+    filename: `${templateName}.json`,
+    saveAs: true
+  });
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function buildTemplateJSON(templateName) {
+  const paginationEnabled = document.getElementById('pagination-enabled').checked;
+  const nextPageSelector = document.getElementById('next-page-selector').value;
+
+  return {
+    template_name: templateName,
+    version: '1.0',
+    created_at: new Date().toISOString(),
+    container: {
+      selector: templateState.containerSelector || 'div.item',
+      type: 'repeating'
+    },
+    fields: templateState.fields.map(f => ({
+      name: f.name,
+      selector: f.selector,
+      attribute: f.attribute || 'text',
+      required: f.required !== false
+    })),
+    pagination: paginationEnabled ? {
+      enabled: true,
+      next_button: nextPageSelector || null,
+      type: 'manual'
+    } : { enabled: false }
+  };
+}

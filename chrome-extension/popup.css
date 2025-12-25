@@ -581,3 +581,176 @@ footer {
 .yaml-preview::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* ============================================================================
+   SCRAPER/TEMPLATE BUILDER STYLES
+   ============================================================================ */
+
+.scraper-section {
+  padding: 0;
+}
+
+.scraper-status {
+  text-align: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.scraper-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.scraper-info {
+  background: #fff3e0;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 20px;
+  border-left: 4px solid #ff9800;
+}
+
+.scraper-info p {
+  margin: 0 0 8px 0;
+  color: #e65100;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.template-fields-section {
+  margin-top: 20px;
+}
+
+.template-fields-section.hidden {
+  display: none;
+}
+
+.fields-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.fields-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.fields-list {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 15px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.field-item {
+  background: white;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #e0e0e0;
+}
+
+.field-name {
+  font-weight: 600;
+  color: #ff9800;
+  font-size: 12px;
+  flex: 1;
+}
+
+.field-selector {
+  font-size: 11px;
+  color: #666;
+  font-family: 'Courier New', monospace;
+  flex: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detection-results {
+  background: #e8f5e9;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #c8e6c9;
+}
+
+.detection-results h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2e7d32;
+  margin: 0 0 8px 0;
+}
+
+.detected-preview {
+  font-size: 11px;
+  color: #555;
+  font-family: 'Courier New', monospace;
+  max-height: 100px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.template-config {
+  margin-bottom: 15px;
+}
+
+.template-config label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+  margin-top: 10px;
+  color: #555;
+  font-size: 13px;
+}
+
+.template-config input[type="text"] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.template-config input[type="text"]:focus {
+  outline: none;
+  border-color: #ff9800;
+}
+
+.options-section {
+  margin: 10px 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}

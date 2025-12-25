@@ -1,0 +1,72 @@
+Traceback (most recent call last):
+  File "D:\Claude\Automate\Browser\tab-session-manager\desktop_gui\utils\session_manager_wrapper.py", line 171, in create_new_session
+    self.active_manager.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Claude\Automate\Browser\tab-session-manager\tab_session_manager.py", line 88, in launch_browser
+    self.playwright = sync_playwright().start()
+                      ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\rocke\AppData\Roaming\Python\Python313\site-packages\playwright\sync_api\_context_manager.py", line 84, in start
+    return self.__enter__()
+           ~~~~~~~~~~~~~~^^
+  File "C:\Users\rocke\AppData\Roaming\Python\Python313\site-packages\playwright\sync_api\_context_manager.py", line 47, in __enter__
+                raise Error(
+    ...<2 lines>...
+                )
+playwright._impl._errors.Error: It looks like you are using Playwright Sync API inside the asyncio loop.
+Please use the Async API instead.
+Traceback (most recent call last):
+  File "D:\Claude\Automate\Browser\tab-session-manager\desktop_gui\utils\session_manager_wrapper.py", line 171, in create_new_session
+    self.active_manager.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Claude\Automate\Browser\tab-session-manager\tab_session_manager.py", line 88, in launch_browser
+    self.playwright = sync_playwright().start()
+                      ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\rocke\AppData\Roaming\Python\Python313\site-packages\playwright\sync_api\_context_manager.py", line 84, in start
+    return self.__enter__()
+           ~~~~~~~~~~~~~~^^
+  File "C:\Users\rocke\AppData\Roaming\Python\Python313\site-packages\playwright\sync_api\_context_manager.py", line 47, in __enter__
+                raise Error(
+    ...<2 lines>...
+                )
+playwright._impl._errors.Error: It looks like you are using Playwright Sync API inside the asyncio loop.
+Please use the Async API instead.
+[MainWindow] Session name: test
+[MainWindow] Browser: chrome, Incognito: False
+[MainWindow] Auto-save: True, Interval: 3.0
+[DEBUG] Creating session: test
+[DEBUG] Browser: chrome, Incognito: False
+[DEBUG] Session name validated
+[DEBUG] TabSessionManager created
+[DEBUG] Launching browser: chrome
+Launching chrome browser...
+  Tab 1: New Tab - about:blank
+Browser launched successfully!
+Open tabs manually. When done, use save command to save session.
+[DEBUG] Browser launched successfully
+[MainWindow] Create result: True
+[MainWindow] Session name: test
+[MainWindow] Browser: chrome, Incognito: False
+[MainWindow] Auto-save: True, Interval: 3.0
+[DEBUG] Creating session: test
+[DEBUG] Browser: chrome, Incognito: False
+[DEBUG] Session name validated
+[DEBUG] TabSessionManager created
+[DEBUG] Launching browser: chrome
+Launching chrome browser...
+[ERROR] Error creating new session: It looks like you are using Playwright Sync API inside the asyncio loop.
+Please use the Async API instead.
+[ERROR] Traceback:
+[MainWindow] Create result: False
+[MainWindow] Session name: test
+[MainWindow] Browser: chrome, Incognito: True
+[MainWindow] Auto-save: True, Interval: 3.0
+[DEBUG] Creating session: test
+[DEBUG] Browser: chrome, Incognito: True
+[DEBUG] Session name validated
+[DEBUG] TabSessionManager created
+[DEBUG] Launching browser: chrome
+Launching chrome browser in incognito mode...
+[ERROR] Error creating new session: It looks like you are using Playwright Sync API inside the asyncio loop.
+Please use the Async API instead.
+[ERROR] Traceback:
+[MainWindow] Create result: False

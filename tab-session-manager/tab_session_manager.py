@@ -77,48 +77,92 @@ class TabSessionManager:
         self.context = None
         self.playwright = None
         self.auto_save_manager = AutoSaveManager(self, interval=auto_save_interval, enabled=auto_save_enabled)
+        self.current_browser_type = None  # Track current browser type
+        self.current_profile_name = None  # Track current profile name
+        self.current_incognito_mode = False  # Track incognito status
 
-    def launch_browser(self, browser_type='chrome', incognito_mode=False):
+    def launch_browser(self, browser_type='chrome', incognito_mode=False, profile_name=None):
         """Launch browser in headed mode and return browser instance.
 
         Args:
             browser_type: Browser to use ('chrome', 'brave', 'firefox', 'chromium')
-            incognito_mode: Launch in incognito/private mode
+            incognito_mode: Launch in incognito/private mode (overrides profile)
+            profile_name: Optional profile name for persistent storage (e.g., 'work', 'personal')
+                         If None or empty, uses ephemeral session (current behavior)
+                         Ignored if incognito_mode=True
         """
         print(f"Launching {browser_type} browser" + (" in incognito mode..." if incognito_mode else "..."))
         self.playwright = sync_playwright().start()
 
-        # Build launch args
-        launch_args = [
-            '--remote-debugging-port=9222',
-            '--disable-blink-features=AutomationControlled',  # Less detectable
-            '--no-sandbox',  # Helps with permissions
-            '--disable-web-security',  # For local testing
-        ]
+        # Determine if using persistent profile
+        use_persistent_profile = profile_name and not incognito_mode
+        profile_path = None
 
-        # Add incognito mode flag
-        if incognito_mode:
-            launch_args.append('--incognito')
+        if use_persistent_profile:
+            # Create profiles directory if it doesn't exist
+            from pathlib import Path
+            import re
+            profiles_dir = Path(__file__).parent / 'profiles'
+            profiles_dir.mkdir(exist_ok=True)
 
-        # Select browser based on type
+            # Validate profile name (alphanumeric, dash, underscore only)
+            if not re.match(r'^[a-zA-Z0-9_-]+$', profile_name):
+                print(f"[WARNING] Invalid profile name '{profile_name}', using ephemeral session")
+                use_persistent_profile = False
+            else:
+                profile_path = profiles_dir / profile_name
+                profile_path.mkdir(exist_ok=True)
+                print(f"Using persistent profile: {profile_path}")
+
+        # Store profile info for session metadata
         browser_type_lower = browser_type.lower()
+        self.current_browser_type = browser_type_lower
+        self.current_profile_name = profile_name if use_persistent_profile else None
+        self.current_incognito_mode = incognito_mode
 
+        # Browser launch with profile support
         if browser_type_lower == 'firefox':
-            # Firefox uses different args
+            # Firefox implementation
             firefox_args = []
             if incognito_mode:
-                firefox_args.append('--private-window')  # Correct Firefox private mode flag
-            self.browser = self.playwright.firefox.launch(
-                headless=False,
-                args=firefox_args
-            )
+                firefox_args.append('--private-window')
+
+            if use_persistent_profile:
+                # Launch with persistent profile
+                self.context = self.playwright.firefox.launch_persistent_context(
+                    str(profile_path),
+                    headless=False,
+                    args=firefox_args
+                )
+                self.browser = self.context.browser
+            else:
+                # Launch without profile (current behavior)
+                self.browser = self.playwright.firefox.launch(
+                    headless=False,
+                    args=firefox_args
+                )
+                self.context = self.browser.new_context(
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                )
+
         elif browser_type_lower in ['chrome', 'chromium', 'brave']:
-            # Chromium-based browsers (Chrome, Chromium, Brave)
+            # Chromium-based browsers
+            launch_args = [
+                '--remote-debugging-port=9222',
+                '--disable-blink-features=AutomationControlled',
+                '--no-sandbox',
+                '--disable-web-security',
+            ]
+
+            if incognito_mode:
+                launch_args.append('--incognito')
+
             launch_kwargs = {
                 'headless': False,
                 'args': launch_args
             }
 
+            # Set channel or executable path
             if browser_type_lower == 'chrome':
                 launch_kwargs['channel'] = 'chrome'
             elif browser_type_lower == 'brave':
@@ -131,12 +175,11 @@ class TabSessionManager:
                         r"C:\Program Files (x86)\BraveSoftware\Brave-Browser\Application\brave.exe",
                         os.path.expandvars(r"%LOCALAPPDATA%\BraveSoftware\Brave-Browser\Application\brave.exe"),
                     ]
-                elif platform.system() == 'Darwin':  # macOS
+                elif platform.system() == 'Darwin':
                     brave_paths = ["/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"]
                 elif platform.system() == 'Linux':
                     brave_paths = ["/usr/bin/brave-browser", "/usr/bin/brave"]
 
-                # Find first existing path
                 brave_exe = None
                 for path in brave_paths:
                     if os.path.exists(path):
@@ -147,20 +190,45 @@ class TabSessionManager:
                     launch_kwargs['executable_path'] = brave_exe
                 else:
                     print("[WARNING] Brave browser not found, falling back to Chromium")
-            # chromium uses default (no channel or executable_path)
 
-            self.browser = self.playwright.chromium.launch(**launch_kwargs)
+            if use_persistent_profile:
+                # Launch with persistent profile
+                self.context = self.playwright.chromium.launch_persistent_context(
+                    str(profile_path),
+                    **launch_kwargs,
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                )
+                self.browser = self.context.browser
+            else:
+                # Launch without profile (current behavior)
+                self.browser = self.playwright.chromium.launch(**launch_kwargs)
+                self.context = self.browser.new_context(
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                )
         else:
             # Default to chromium
-            self.browser = self.playwright.chromium.launch(
-                headless=False,
-                args=launch_args
-            )
+            launch_args = [
+                '--remote-debugging-port=9222',
+                '--disable-blink-features=AutomationControlled',
+                '--no-sandbox',
+                '--disable-web-security',
+            ]
+            if incognito_mode:
+                launch_args.append('--incognito')
 
-        # Set a user agent to avoid detection
-        self.context = self.browser.new_context(
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        )
+            if use_persistent_profile:
+                self.context = self.playwright.chromium.launch_persistent_context(
+                    str(profile_path),
+                    headless=False,
+                    args=launch_args,
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                )
+                self.browser = self.context.browser
+            else:
+                self.browser = self.playwright.chromium.launch(headless=False, args=launch_args)
+                self.context = self.browser.new_context(
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                )
 
         # Open initial blank page
         page = self.context.new_page()
@@ -362,6 +430,9 @@ class TabSessionManager:
             session_data = {
                 'session_name': session_name,
                 'created_at': datetime.now().isoformat(),
+                'browser_type': self.current_browser_type,
+                'profile_name': self.current_profile_name,
+                'incognito_mode': self.current_incognito_mode,
                 'groups': updated_groups
             }
 
@@ -379,6 +450,9 @@ class TabSessionManager:
             session_data = {
                 'session_name': session_name,
                 'created_at': datetime.now().isoformat(),
+                'browser_type': self.current_browser_type,
+                'profile_name': self.current_profile_name,
+                'incognito_mode': self.current_incognito_mode,
                 'tabs': current_tabs
             }
             self.tabs = current_tabs  # Update tracked tabs
@@ -485,6 +559,11 @@ class TabSessionManager:
             print(f"Error loading session: {e}")
             return False
 
+        # Extract browser metadata (backward compatible)
+        browser_type = session_data.get('browser_type', 'chrome')
+        profile_name = session_data.get('profile_name')  # May be None
+        incognito_mode = session_data.get('incognito_mode', False)
+
         # Parse tabs (handle both old and new format)
         tabs = self._parse_session_tabs(session_data, group_filter)
 
@@ -494,13 +573,22 @@ class TabSessionManager:
 
         print(f"\nLoading session: {session_name}")
         print(f"  Created: {session_data.get('created_at', 'Unknown')}")
+
+        # Show profile info if available
+        if profile_name:
+            print(f"  Browser: {browser_type} (profile: {profile_name})")
+        elif incognito_mode:
+            print(f"  Browser: {browser_type} (incognito mode)")
+        else:
+            print(f"  Browser: {browser_type}")
+
         if group_filter:
             print(f"  Groups: {', '.join(group_filter)}")
         print(f"  Tabs: {len(tabs)}")
 
         # Launch browser if not already running
         if not self.browser:
-            self.launch_browser()
+            self.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name)
 
         # Close the initial blank page if it exists
         if self.context.pages:

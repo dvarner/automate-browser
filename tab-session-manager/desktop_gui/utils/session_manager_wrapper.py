@@ -151,7 +151,7 @@ class SessionManagerWrapper(QObject):
             print(f"Error loading session: {e}")
             return False
 
-    def create_new_session(self, session_name, auto_save=True, auto_save_interval=3.0, browser_type='chrome', incognito_mode=False):
+    def create_new_session(self, session_name, auto_save=True, auto_save_interval=3.0, browser_type='chrome', incognito_mode=False, profile_name=None):
         """Create a new browser session.
 
         Args:
@@ -160,6 +160,7 @@ class SessionManagerWrapper(QObject):
             auto_save_interval: Auto-save interval in seconds
             browser_type: Browser to use ('chrome', 'brave', 'firefox', 'chromium')
             incognito_mode: Launch in incognito/private mode
+            profile_name: Optional profile name for persistent storage
 
         Returns:
             bool: True if successful, False otherwise
@@ -167,6 +168,7 @@ class SessionManagerWrapper(QObject):
         try:
             print(f"[DEBUG] Creating session: {session_name}")
             print(f"[DEBUG] Browser: {browser_type}, Incognito: {incognito_mode}")
+            print(f"[DEBUG] Profile: {profile_name if profile_name else 'None (ephemeral)'}")
 
             # Validate session name
             if not self._validate_session_name(session_name):
@@ -190,7 +192,7 @@ class SessionManagerWrapper(QObject):
 
             def launch_thread():
                 try:
-                    self.active_manager.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode)
+                    self.active_manager.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name)
                     launch_success[0] = True
                 except Exception as e:
                     launch_error[0] = e
@@ -206,6 +208,10 @@ class SessionManagerWrapper(QObject):
                 raise Exception("Browser launch timed out")
 
             print("[DEBUG] Browser launched successfully")
+
+            # Save initial session file so it appears in the session list
+            print(f"[DEBUG] Saving initial session file: {session_name}")
+            self.active_manager.save_session(session_name, quiet=True)
 
             self._browser_running = True
             self.browser_status_changed.emit(True)
