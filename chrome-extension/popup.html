@@ -18,6 +18,7 @@
       <button class="tab-btn active" data-tab="export">📥 Export Tabs</button>
       <button class="tab-btn" data-tab="record">🔴 Record Workflow</button>
       <button class="tab-btn" data-tab="scrape">🎯 Scrape Template</button>
+      <button class="tab-btn" data-tab="batch-scrape">📊 Batch Scrape</button>
     </div>
 
     <main>
@@ -213,6 +214,72 @@
             </div>
 
             <div id="template-preview" class="yaml-preview hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Batch Scrape Tab Content -->
+      <div id="batch-scrape-tab" class="tab-content">
+        <div class="scraper-section">
+          <div class="info-section">
+            <div class="info-item">
+              <span class="label">📑 Open Tabs:</span>
+              <span class="value" id="batch-tab-count">0</span>
+            </div>
+            <div class="info-item">
+              <span class="label">📁 Groups:</span>
+              <span class="value" id="batch-group-count">0</span>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <label for="batch-template-select">Template:</label>
+            <select id="batch-template-select" class="template-select">
+              <option value="">No templates saved</option>
+            </select>
+            <small class="hint">Build templates in the "Scrape Template" tab</small>
+          </div>
+
+          <div class="form-section">
+            <label for="batch-filter-select">Tab Filter:</label>
+            <select id="batch-filter-select">
+              <option value="all">All tabs (including grouped)</option>
+              <option value="ungrouped">Only ungrouped tabs</option>
+              <option value="grouped">Only grouped tabs</option>
+              <option value="regex">Regex match group name</option>
+            </select>
+          </div>
+
+          <div id="batch-regex-section" class="form-section hidden">
+            <label for="batch-regex-pattern">Group Name Pattern:</label>
+            <input type="text" id="batch-regex-pattern" placeholder="e.g., Shop.* or Work|Dev">
+            <small class="hint">Enter a regex pattern to match group names</small>
+          </div>
+
+          <div class="button-section">
+            <button id="batch-scrape-btn" class="primary-btn">
+              <span class="btn-icon">🚀</span>
+              Start Batch Scrape
+            </button>
+          </div>
+
+          <div id="batch-status" class="status hidden"></div>
+
+          <div id="batch-progress" class="hidden">
+            <label>Progress:</label>
+            <div class="progress-wrapper" style="background: #f0f0f0; border-radius: 4px; overflow: hidden; height: 24px; margin: 8px 0;">
+              <div id="batch-progress-fill" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; width: 0%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 11px;"></div>
+            </div>
+            <div id="batch-progress-text" style="font-size: 11px; color: #666; margin-top: 4px;">Preparing...</div>
+          </div>
+
+          <div id="batch-results" class="hidden" style="margin-top: 20px;">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">Results: <span id="batch-result-count">0</span> items</h3>
+            <div id="batch-results-preview" style="background: #f8f9fa; border-radius: 6px; padding: 12px; max-height: 200px; overflow-y: auto; font-size: 11px; font-family: 'Courier New', monospace; margin-bottom: 12px;"></div>
+            <button id="batch-export-btn" class="primary-btn">
+              <span class="btn-icon">💾</span>
+              Export JSON
+            </button>
           </div>
         </div>
       </div>

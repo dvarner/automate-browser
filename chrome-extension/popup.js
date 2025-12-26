@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   generateDefaultSessionName();
   await loadRecordingState();
   await loadTemplateState();
+  await loadBatchScrapeState();
   setupTabSwitching();
 });
 
@@ -695,4 +696,259 @@ function buildTemplateJSON(templateName) {
       type: 'manual'
     } : { enabled: false }
   };
+}
+
+// ============================================================================
+// BATCH SCRAPE TAB LOGIC
+// ============================================================================
+
+let batchScrapeState = {
+  templates: [],
+  results: null
+};
+
+async function loadBatchScrapeState() {
+  // Load saved templates
+  const stored = await chrome.storage.local.get(['savedTemplates']);
+  batchScrapeState.templates = stored.savedTemplates || [];
+
+  // Populate template dropdown
+  const select = document.getElementById('batch-template-select');
+  select.innerHTML = '';
+
+  if (batchScrapeState.templates.length === 0) {
+    select.innerHTML = '<option value="">No templates saved</option>';
+    document.getElementById('batch-scrape-btn').disabled = true;
+  } else {
+    batchScrapeState.templates.forEach((template, idx) => {
+      const option = document.createElement('option');
+      option.value = idx;
+      option.textContent = template.template_name;
+      select.appendChild(option);
+    });
+    document.getElementById('batch-scrape-btn').disabled = false;
+  }
+
+  // Update tab counts
+  await updateBatchTabCounts();
+
+  // Setup event listeners
+  document.getElementById('batch-filter-select').addEventListener('change', handleBatchFilterChange);
+  document.getElementById('batch-scrape-btn').addEventListener('click', handleBatchScrape);
+  document.getElementById('batch-export-btn').addEventListener('click', handleBatchExport);
+}
+
+function handleBatchFilterChange() {
+  const filterType = document.getElementById('batch-filter-select').value;
+  const regexSection = document.getElementById('batch-regex-section');
+
+  if (filterType === 'regex') {
+    regexSection.classList.remove('hidden');
+  } else {
+    regexSection.classList.add('hidden');
+  }
+}
+
+async function updateBatchTabCounts() {
+  const tabs = await chrome.tabs.query({ currentWindow: true });
+  const groups = await chrome.tabGroups.query({});
+
+  document.getElementById('batch-tab-count').textContent = tabs.length;
+  document.getElementById('batch-group-count').textContent = groups.length;
+}
+
+async function handleBatchScrape() {
+  // Get selected template
+  const templateIdx = document.getElementById('batch-template-select').value;
+  if (templateIdx === '' || !batchScrapeState.templates[templateIdx]) {
+    showBatchStatus('Please select a template', 'error');
+    return;
+  }
+
+  const template = batchScrapeState.templates[templateIdx];
+
+  // Get filter settings
+  const filterType = document.getElementById('batch-filter-select').value;
+  const groupPattern = document.getElementById('batch-regex-pattern').value;
+
+  if (filterType === 'regex' && !groupPattern.trim()) {
+    showBatchStatus('Please enter a regex pattern', 'error');
+    return;
+  }
+
+  // Get all tabs and groups
+  const tabs = await chrome.tabs.query({ currentWindow: true });
+  const groups = await chrome.tabGroups.query({});
+
+  // Create group map
+  const groupMap = {};
+  groups.forEach(g => groupMap[g.id] = g.title);
+
+  // Filter tabs
+  const filteredTabs = filterTabsByGroup(tabs, filterType, groupPattern, groupMap);
+
+  if (filteredTabs.length === 0) {
+    showBatchStatus('No tabs match the selected filter', 'error');
+    return;
+  }
+
+  // Show progress
+  document.getElementById('batch-progress').classList.remove('hidden');
+  document.getElementById('batch-results').classList.add('hidden');
+  document.getElementById('batch-scrape-btn').disabled = true;
+
+  // Scrape each tab
+  const results = [];
+  for (let i = 0; i < filteredTabs.length; i++) {
+    const tab = filteredTabs[i];
+
+    // Update progress
+    updateBatchProgress(i + 1, filteredTabs.length, tab.title);
+
+    try {
+      // Send template to content script on this tab
+      const response = await chrome.tabs.sendMessage(tab.id, {
+        type: 'APPLY_TEMPLATE',
+        template: template
+      });
+
+      results.push({
+        tab_index: i,
+        tab_url: tab.url,
+        tab_title: tab.title,
+        tab_group: tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE ? groupMap[tab.groupId] : null,
+        status: 'success',
+        items: response.items
+      });
+    } catch (error) {
+      results.push({
+        tab_index: i,
+        tab_url: tab.url,
+        tab_title: tab.title,
+        tab_group: tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE ? groupMap[tab.groupId] : null,
+        status: 'error',
+        error_message: error.message,
+        items: []
+      });
+    }
+
+    // Delay between tabs
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  // Store and display results
+  const successful = results.filter(r => r.status === 'success').length;
+  const failed = results.filter(r => r.status === 'error').length;
+
+  batchScrapeState.results = {
+    total_tabs: filteredTabs.length,
+    successful: successful,
+    failed: failed,
+    results: results
+  };
+
+  displayBatchResults();
+
+  // Re-enable button
+  document.getElementById('batch-scrape-btn').disabled = false;
+}
+
+function filterTabsByGroup(tabs, filterType, groupPattern, groupMap) {
+  if (filterType === 'all') {
+    return tabs;
+  } else if (filterType === 'ungrouped') {
+    return tabs.filter(tab => tab.groupId === chrome.tabGroups.TAB_GROUP_ID_NONE);
+  } else if (filterType === 'grouped') {
+    return tabs.filter(tab => tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE);
+  } else if (filterType === 'regex') {
+    const pattern = new RegExp(groupPattern);
+    return tabs.filter(tab => {
+      if (tab.groupId === chrome.tabGroups.TAB_GROUP_ID_NONE) {
+        return false;
+      }
+      const groupName = groupMap[tab.groupId] || '';
+      return pattern.test(groupName);
+    });
+  }
+  return tabs;
+}
+
+function updateBatchProgress(current, total, tabTitle) {
+  const progressFill = document.getElementById('batch-progress-fill');
+  const progressText = document.getElementById('batch-progress-text');
+
+  const percentage = Math.round((current / total) * 100);
+  progressFill.style.width = percentage + '%';
+  progressFill.textContent = percentage + '%';
+  progressText.textContent = `Scraping ${current}/${total}: ${tabTitle.substring(0, 40)}...`;
+}
+
+function displayBatchResults() {
+  const results = batchScrapeState.results;
+
+  // Hide progress
+  document.getElementById('batch-progress').classList.add('hidden');
+
+  // Show results
+  document.getElementById('batch-results').classList.remove('hidden');
+
+  // Update count
+  const totalItems = results.results.reduce((sum, r) => sum + r.items.length, 0);
+  document.getElementById('batch-result-count').textContent = totalItems;
+
+  // Build preview
+  let preview = `Total Tabs: ${results.total_tabs}\n`;
+  preview += `Successful: ${results.successful}\n`;
+  preview += `Failed: ${results.failed}\n`;
+  preview += `Total Items: ${totalItems}\n\n`;
+  preview += '='.repeat(50) + '\n\n';
+
+  results.results.forEach((result, idx) => {
+    preview += `[${idx + 1}] ${result.tab_title.substring(0, 40)}\n`;
+    preview += `    Status: ${result.status}\n`;
+    if (result.status === 'success') {
+      preview += `    Items: ${result.items.length}\n`;
+    } else {
+      preview += `    Error: ${result.error_message}\n`;
+    }
+    preview += '\n';
+  });
+
+  document.getElementById('batch-results-preview').textContent = preview;
+
+  showBatchStatus(`Scraped ${results.successful} tabs (${results.failed} failed), ${totalItems} items`, 'success');
+}
+
+function handleBatchExport() {
+  if (!batchScrapeState.results) {
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(batchScrapeState.results, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const now = new Date();
+  const timestamp = now.toISOString().split('T')[0].replace(/-/g, '');
+  const filename = `batch-scrape-${timestamp}.json`;
+
+  chrome.downloads.download({
+    url: url,
+    filename: filename,
+    saveAs: true
+  });
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  showBatchStatus('Results exported successfully', 'success');
+}
+
+function showBatchStatus(message, type) {
+  const statusEl = document.getElementById('batch-status');
+  statusEl.textContent = message;
+  statusEl.className = `status ${type}`;
+  statusEl.classList.remove('hidden');
+
+  setTimeout(() => {
+    statusEl.classList.add('hidden');
+  }, 3000);
 }

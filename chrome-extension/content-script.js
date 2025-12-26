@@ -26,6 +26,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.type === 'DETECT_CONTAINER_AND_ITEMS') {
     const result = detectContainerAndItems(message.fieldSelectors);
     sendResponse({ success: true, ...result });
+  } else if (message.type === 'APPLY_TEMPLATE') {
+    const result = applyTemplateToPage(message.template);
+    sendResponse(result);
   }
   return true;
 });
@@ -541,4 +544,65 @@ function makeRelativeSelector(absoluteSelector, containerSelector) {
   // Extract last meaningful part
   const parts = absoluteSelector.split('>').map(p => p.trim());
   return parts[parts.length - 1] || absoluteSelector;
+}
+
+// ============================================================================
+// APPLY TEMPLATE TO PAGE (for batch scraping)
+// ============================================================================
+
+function applyTemplateToPage(template) {
+  try {
+    // Wait for container to be present
+    const containerSelector = template.container.selector;
+    const containers = document.querySelectorAll(containerSelector);
+
+    if (containers.length === 0) {
+      return {
+        success: false,
+        error: `Container not found: ${containerSelector}`,
+        items: []
+      };
+    }
+
+    // Extract data from each container
+    const items = [];
+    containers.forEach((container) => {
+      const itemData = {};
+
+      template.fields.forEach(field => {
+        try {
+          const elem = container.querySelector(field.selector);
+
+          if (elem) {
+            // Extract value
+            if (field.attribute === 'text') {
+              itemData[field.name] = elem.innerText.trim();
+            } else {
+              itemData[field.name] = elem.getAttribute(field.attribute);
+            }
+          } else {
+            // Element not found
+            if (field.required !== false) {
+              itemData[field.name] = null;
+            }
+          }
+        } catch (e) {
+          itemData[field.name] = null;
+        }
+      });
+
+      items.push(itemData);
+    });
+
+    return {
+      success: true,
+      items: items
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      items: []
+    };
+  }
 }
