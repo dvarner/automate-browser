@@ -1,0 +1,23 @@
+name: Multi-Tab Product Scraping
+description: Scrape product data from all open tabs with group filtering
+browser: chrome
+timeout: 30
+
+steps:
+  - action: wait_for_human
+    message: "Open multiple product pages in tabs (optionally group them), then press Enter"
+
+  - action: scrape_all_tabs
+    template: example-product-listing.json
+    name: all_products
+    filter: all  # Options: all, ungrouped, grouped, regex
+    # group_pattern: "Shop.*"  # Only needed if filter: regex
+    continue_on_error: true
+
+  - action: save_json
+    data: all_products
+    file: multi-tab-scrape-results.json
+
+  - action: screenshot
+    file: multi-tab-scrape-complete.png
+    full_page: true

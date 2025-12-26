@@ -186,3 +186,67 @@ class TemplateExtractAction(BaseAction):
         self.data_store[name] = all_data
 
         return f"Extracted {len(all_data)} items using template"
+
+
+class ScrapeAllTabsAction(BaseAction):
+    """Scrape all open tabs using template with group filtering"""
+
+    def description(self):
+        template = self.step.get('template', 'template.json')
+        filter_type = self.step.get('filter', 'all')
+        return f"Scrape all tabs using '{template}' (filter: {filter_type})"
+
+    def execute(self):
+        import sys
+        from pathlib import Path
+
+        # Add utils to path
+        utils_path = Path(__file__).parent.parent / 'utils'
+        if str(utils_path) not in sys.path:
+            sys.path.insert(0, str(utils_path))
+
+        from multi_tab_scraper import MultiTabScraper, TabGroupFilter
+
+        # Parse parameters
+        template_file = self.step.get('template')
+        if not template_file:
+            raise ValueError("scrape_all_tabs requires 'template' field")
+
+        output_name = self.step.get('name', 'multi_tab_data')
+        filter_type = self.step.get('filter', 'all')
+        group_pattern = self.step.get('group_pattern')
+        continue_on_error = self.step.get('continue_on_error', True)
+
+        # Load template
+        template_path = Path('templates') / template_file
+        if not template_path.exists():
+            template_path = Path('workflows') / template_file
+        if not template_path.exists():
+            raise FileNotFoundError(f"Template not found: {template_file}")
+
+        # Create filter
+        group_filter = None
+        if filter_type != 'all':
+            group_filter = TabGroupFilter(filter_type, group_pattern)
+
+        # Create scraper
+        scraper = MultiTabScraper(template_path, group_filter, continue_on_error)
+
+        # Get browser context pages
+        context = self.page.context
+        pages = context.pages
+
+        print(f"    Found {len(pages)} open tabs")
+
+        # Scrape with progress
+        results = scraper.scrape_pages(
+            pages,
+            progress_callback=lambda c, t, u: print(f"    [{c}/{t}] {u[:60]}...")
+        )
+
+        # Store results
+        self.data_store[output_name] = results
+
+        # Summary
+        total_items = sum(len(r['items']) for r in results['results'] if r['status'] == 'success')
+        return f"Scraped {results['successful']} tabs ({results['failed']} failed), {total_items} items"

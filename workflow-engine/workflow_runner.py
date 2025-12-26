@@ -21,7 +21,7 @@ if sys.platform == 'win32':
 
 from actions.navigation import NavigateAction, WaitAction
 from actions.interaction import ClickAction, FillAction
-from actions.extraction import ExtractAction, ExtractTableAction, TemplateExtractAction
+from actions.extraction import ExtractAction, ExtractTableAction, TemplateExtractAction, ScrapeAllTabsAction
 from actions.human import WaitForHumanAction
 from actions.utility import ScreenshotAction, SaveCSVAction, SaveJSONAction, RateLimitAction, ConditionalAction
 from actions.download import DownloadAction, DownloadLinkAction, DownloadMediaAction
@@ -40,6 +40,7 @@ class WorkflowRunner:
         'extract': ExtractAction,
         'extract_table': ExtractTableAction,
         'template_extract': TemplateExtractAction,
+        'scrape_all_tabs': ScrapeAllTabsAction,
         'screenshot': ScreenshotAction,
         'save_csv': SaveCSVAction,
         'save_json': SaveJSONAction,
