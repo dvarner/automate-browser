@@ -18,6 +18,7 @@ class SessionCard(QFrame):
     double_clicked = pyqtSignal(str)  # session_name
     load_requested = pyqtSignal(str)  # session_name
     details_requested = pyqtSignal(str)  # session_name
+    scrape_requested = pyqtSignal(str)  # session_name
     delete_requested = pyqtSignal(str)  # session_name
 
     def __init__(self, session_data, parent=None):
@@ -171,6 +172,9 @@ class SessionCard(QFrame):
 
         details_action = menu.addAction("🔍 View Details")
         details_action.triggered.connect(lambda: self.details_requested.emit(self.session_name))
+
+        scrape_action = menu.addAction("📊 Scrape All Tabs")
+        scrape_action.triggered.connect(lambda: self.scrape_requested.emit(self.session_name))
 
         menu.addSeparator()
 

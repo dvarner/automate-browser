@@ -120,6 +120,7 @@ class SessionListWidget(QWidget):
             # Connect signals
             card.load_requested.connect(self.on_load_session)
             card.details_requested.connect(self.on_show_details)
+            card.scrape_requested.connect(self.on_scrape_session)
             card.delete_requested.connect(self.on_delete_session)
 
             # Add to grid
@@ -162,6 +163,22 @@ class SessionListWidget(QWidget):
                 "Error",
                 f"Could not load details for session '{session_name}'"
             )
+
+    def on_scrape_session(self, session_name):
+        """Handle scrape session request."""
+        from dialogs.scrape_dialog import ScrapeAllTabsDialog
+
+        details = self.session_manager.get_session_details(session_name)
+        if not details:
+            QMessageBox.warning(
+                self,
+                "Error",
+                f"Could not load session '{session_name}'"
+            )
+            return
+
+        dialog = ScrapeAllTabsDialog(session_name, details, self.session_manager, self)
+        dialog.exec()
 
     def on_delete_session(self, session_name):
         """Handle delete session request."""
@@ -223,6 +240,7 @@ class SessionListWidget(QWidget):
             # Connect signals
             card.load_requested.connect(self.on_load_session)
             card.details_requested.connect(self.on_show_details)
+            card.scrape_requested.connect(self.on_scrape_session)
             card.delete_requested.connect(self.on_delete_session)
 
             # Add to grid
