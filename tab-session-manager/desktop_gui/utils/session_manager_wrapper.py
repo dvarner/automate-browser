@@ -139,26 +139,46 @@ class SessionManagerWrapper(QObject):
 
             def load_thread():
                 try:
+                    # Set asyncio policy to avoid conflicts
+                    import asyncio
+                    try:
+                        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+                    except:
+                        pass
+
                     result = self.active_manager.load_session(session_name, group_filter=group_filter)
                     load_success[0] = result
                 except Exception as e:
                     load_error[0] = e
+                    import traceback
+                    print(f"[ERROR] Load thread exception: {e}")
+                    traceback.print_exc()
 
-            thread = threading.Thread(target=load_thread)
+            thread = threading.Thread(target=load_thread, daemon=False)
             thread.start()
             thread.join(timeout=30)
 
             if load_error[0]:
+                print(f"[ERROR] Load failed with error: {load_error[0]}")
                 raise load_error[0]
 
-            if load_success[0]:
-                self.session_loaded.emit(session_name)
-                self._browser_running = True
-                self.browser_status_changed.emit(True)
+            if not thread.is_alive():
+                if load_success[0]:
+                    self.session_loaded.emit(session_name)
+                    self._browser_running = True
+                    self.browser_status_changed.emit(True)
+                    return True
+                else:
+                    print("[ERROR] Load thread completed but returned False")
+                    return False
+            else:
+                print("[ERROR] Load thread timed out after 30 seconds")
+                return False
 
-            return load_success[0]
         except Exception as e:
-            print(f"Error loading session: {e}")
+            import traceback
+            print(f"[ERROR] Error loading session: {e}")
+            traceback.print_exc()
             return False
 
     def create_new_session(self, session_name, auto_save=True, auto_save_interval=3.0, browser_type='chrome', incognito_mode=False, profile_name=None):
