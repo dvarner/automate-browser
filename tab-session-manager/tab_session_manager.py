@@ -22,8 +22,13 @@ class AutoSaveManager:
         self.interval = interval  # Debounce interval in seconds
         self.enabled = enabled
         self.save_timer = None
+        self.periodic_timer = None  # Periodic save timer (not debounced)
         self.lock = threading.Lock()
         self.cached_tabs = []  # Cache tab data to avoid thread issues
+
+        # Start periodic auto-save immediately (works around event detection issues)
+        if enabled:
+            self._start_periodic_save()
 
     def trigger_save(self, tabs_data=None):
         """Trigger a debounced auto-save.
@@ -61,11 +66,37 @@ class AutoSaveManager:
         except Exception as e:
             print(f"[Auto-save] Error: {e}")
 
+    def _start_periodic_save(self):
+        """Start periodic auto-save timer (runs every interval regardless of events)."""
+        def periodic_save():
+            if self.enabled:
+                try:
+                    # Get current tabs directly from browser
+                    tabs_data = self.session_manager._get_current_tabs()
+                    if tabs_data:
+                        self.cached_tabs = tabs_data
+                        self._do_auto_save()
+                except Exception as e:
+                    print(f"[Auto-save] Periodic save error: {e}")
+                finally:
+                    # Schedule next periodic save
+                    if self.enabled:
+                        with self.lock:
+                            self.periodic_timer = threading.Timer(self.interval, periodic_save)
+                            self.periodic_timer.start()
+
+        # Start the periodic timer
+        with self.lock:
+            self.periodic_timer = threading.Timer(self.interval, periodic_save)
+            self.periodic_timer.start()
+
     def cancel(self):
         """Cancel any pending auto-save."""
         with self.lock:
             if self.save_timer and self.save_timer.is_alive():
                 self.save_timer.cancel()
+            if self.periodic_timer and self.periodic_timer.is_alive():
+                self.periodic_timer.cancel()
 
 
 class TabSessionManager:

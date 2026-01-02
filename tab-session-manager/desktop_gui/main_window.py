@@ -266,13 +266,16 @@ class MainWindow(QMainWindow):
         """Start timer to auto-refresh sessions for live sync with browser."""
         self.refresh_timer = QTimer(self)
         self.refresh_timer.timeout.connect(self.auto_refresh_sessions)
-        # Refresh every 5 seconds to show new tabs
-        self.refresh_timer.start(5000)  # 5000 ms = 5 seconds
+        # Refresh every 3 seconds to show new tabs (aggressive for reliability)
+        # This works around asyncio/event detection issues with Playwright+PyQt6
+        self.refresh_timer.start(3000)  # 3000 ms = 3 seconds
 
     def auto_refresh_sessions(self):
         """Auto-refresh sessions if browser is running (for live sync)."""
         # Only refresh if browser is running (to avoid unnecessary file reads)
         if self.session_manager.check_browser_status():
+            # Force re-read of all session files to catch auto-save updates
+            # This works around asyncio event detection issues
             self.refresh_sessions()
 
     def show_about(self):
