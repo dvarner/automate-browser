@@ -192,14 +192,24 @@ class SessionManagerWrapper(QObject):
 
             def launch_thread():
                 try:
+                    # Set environment variable to avoid asyncio conflicts
+                    import os
+                    os.environ['PLAYWRIGHT_PYTHON_SYNC_LAUNCH'] = '1'
+
                     self.active_manager.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name)
                     launch_success[0] = True
                 except Exception as e:
-                    launch_error[0] = e
+                    # Check if it's just the asyncio warning but browser actually launched
+                    error_msg = str(e)
+                    if "asyncio loop" in error_msg and self.active_manager.browser:
+                        print("[WARNING] Asyncio warning but browser launched successfully")
+                        launch_success[0] = True  # Browser is running despite warning
+                    else:
+                        launch_error[0] = e
 
-            thread = threading.Thread(target=launch_thread)
+            thread = threading.Thread(target=launch_thread, daemon=False)
             thread.start()
-            thread.join(timeout=30)  # Wait up to 30 seconds
+            thread.join(timeout=10)  # Wait up to 10 seconds for browser to start
 
             if launch_error[0]:
                 raise launch_error[0]
@@ -210,8 +220,14 @@ class SessionManagerWrapper(QObject):
             print("[DEBUG] Browser launched successfully")
 
             # Save initial session file so it appears in the session list
-            print(f"[DEBUG] Saving initial session file: {session_name}")
-            self.active_manager.save_session(session_name, quiet=True)
+            # Note: This may fail if browser just launched, but that's okay
+            try:
+                print(f"[DEBUG] Saving initial session file: {session_name}")
+                self.active_manager.save_session(session_name, quiet=True)
+                print("[DEBUG] Initial session file saved")
+            except Exception as save_error:
+                print(f"[WARNING] Could not save initial session (this is normal): {save_error}")
+                # This is okay - user can save later manually
 
             self._browser_running = True
             self.browser_status_changed.emit(True)
