@@ -120,6 +120,16 @@ class SessionManagerWrapper(QObject):
             bool: True if successful, False otherwise
         """
         try:
+            # Close existing browser if running
+            if self.active_manager:
+                try:
+                    print("[DEBUG] Closing existing browser before loading session...")
+                    self.active_manager.cleanup()
+                    import time
+                    time.sleep(2)  # Give port time to release
+                except Exception as cleanup_error:
+                    print(f"[WARNING] Error closing existing browser: {cleanup_error}")
+
             # Create TabSessionManager instance
             self.active_manager = TabSessionManager(auto_save_enabled=True, auto_save_interval=3.0)
 
