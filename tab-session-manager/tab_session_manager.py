@@ -52,10 +52,12 @@ class AutoSaveManager:
         try:
             print("\n[Auto-save] Saving session...")
             # Use cached tabs instead of accessing Playwright (thread-safe)
-            success = self.session_manager.save_session('auto-save', quiet=True, cached_tabs=self.cached_tabs)
+            # Save to current session name (not just 'auto-save')
+            session_name = getattr(self.session_manager, 'current_session_name', 'auto-save')
+            success = self.session_manager.save_session(session_name, quiet=True, cached_tabs=self.cached_tabs)
             if success:
                 timestamp = datetime.now().strftime("%H:%M:%S")
-                print(f"[Auto-save] Session saved at {timestamp}")
+                print(f"[Auto-save] Session '{session_name}' saved at {timestamp}")
         except Exception as e:
             print(f"[Auto-save] Error: {e}")
 
@@ -80,6 +82,7 @@ class TabSessionManager:
         self.current_browser_type = None  # Track current browser type
         self.current_profile_name = None  # Track current profile name
         self.current_incognito_mode = False  # Track incognito status
+        self.current_session_name = 'auto-save'  # Track current session name for auto-save
 
     def launch_browser(self, browser_type='chrome', incognito_mode=False, profile_name=None):
         """Launch browser in headed mode and return browser instance.

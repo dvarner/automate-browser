@@ -249,6 +249,10 @@ class SessionManagerWrapper(QObject):
 
             print("[DEBUG] Browser launched successfully")
 
+            # Set current session name for auto-save
+            self.active_manager.current_session_name = session_name
+            print(f"[DEBUG] Set auto-save to use session name: {session_name}")
+
             # Save initial session file so it appears in the session list
             # Note: This may fail if browser just launched, but that's okay
             try:
