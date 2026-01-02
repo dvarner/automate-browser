@@ -177,6 +177,17 @@ class SessionDetailDialog(QDialog):
 
     def on_load_all(self):
         """Handle load entire session."""
+        # Check if browser is already running
+        if self.session_manager.check_browser_status():
+            reply = QMessageBox.question(
+                self,
+                "Browser Already Running",
+                f"A browser is already running.\n\nDo you want to close it and load '{self.session_name}'?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.No:
+                return
+
         reply = QMessageBox.question(
             self,
             "Load Session",

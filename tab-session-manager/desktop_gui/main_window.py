@@ -34,6 +34,9 @@ class MainWindow(QMainWindow):
         # Start browser status polling
         self.start_browser_status_polling()
 
+        # Start auto-refresh timer for live sync with browser tabs
+        self.start_session_refresh_timer()
+
     def init_ui(self):
         """Initialize the user interface."""
         self.setWindowTitle("Browser Automation Manager")
@@ -259,6 +262,19 @@ class MainWindow(QMainWindow):
         """Start polling browser status."""
         self.browser_status_bar.start_polling()
 
+    def start_session_refresh_timer(self):
+        """Start timer to auto-refresh sessions for live sync with browser."""
+        self.refresh_timer = QTimer(self)
+        self.refresh_timer.timeout.connect(self.auto_refresh_sessions)
+        # Refresh every 5 seconds to show new tabs
+        self.refresh_timer.start(5000)  # 5000 ms = 5 seconds
+
+    def auto_refresh_sessions(self):
+        """Auto-refresh sessions if browser is running (for live sync)."""
+        # Only refresh if browser is running (to avoid unnecessary file reads)
+        if self.session_manager.check_browser_status():
+            self.refresh_sessions()
+
     def show_about(self):
         """Show about dialog."""
         dialog = AboutDialog(self)
@@ -272,6 +288,10 @@ class MainWindow(QMainWindow):
 
         # Stop browser status polling
         self.browser_status_bar.stop_polling()
+
+        # Stop session refresh timer
+        if hasattr(self, 'refresh_timer'):
+            self.refresh_timer.stop()
 
         # Accept the close event
         event.accept()
