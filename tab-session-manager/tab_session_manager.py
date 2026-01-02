@@ -239,11 +239,17 @@ class TabSessionManager:
         # Open initial blank page
         page = self.context.new_page()
 
+        # Create and navigate to session info page
+        self._show_session_info_page(page)
+
         # Track the initial page
         self._add_tab(page)
 
         # Listen for new pages/tabs
         self.context.on('page', self._on_new_page)
+
+        # Inject visual indicator on all pages
+        self._inject_session_indicator()
 
         print("Browser launched successfully!")
         print("Open tabs manually. When done, use save command to save session.")
@@ -287,9 +293,260 @@ class TabSessionManager:
         page.on('close', lambda: self._on_tab_close(page))
         page.on('framenavigated', lambda frame: self._on_url_change(page, frame))
 
+        # Inject session indicator on new tabs
+        try:
+            page.evaluate(self._get_indicator_injection_script())
+        except Exception:
+            pass  # Ignore errors if page can't be modified
+
         # Get current tabs and trigger auto-save for new tab (thread-safe)
         tabs_data = self._get_current_tabs()
         self.auto_save_manager.trigger_save(tabs_data)
+
+    def _show_session_info_page(self, page: Page):
+        """Display session information on the initial page."""
+        # Build session info
+        browser_name = self.current_browser_type.upper()
+        mode_info = "🔒 INCOGNITO MODE" if self.current_incognito_mode else "📂 NORMAL MODE"
+        profile_info = f"Profile: {self.current_profile_name}" if self.current_profile_name else "No Profile (Ephemeral)"
+
+        # Get browser-specific icon/color
+        if self.current_browser_type == 'brave':
+            browser_icon = "🦁"
+            browser_color = "#FB542B"
+        elif self.current_browser_type == 'firefox':
+            browser_icon = "🦊"
+            browser_color = "#FF7139"
+        elif self.current_browser_type == 'chrome':
+            browser_icon = "🌐"
+            browser_color = "#4285F4"
+        else:
+            browser_icon = "🌐"
+            browser_color = "#5F6368"
+
+        incognito_color = "#424242" if self.current_incognito_mode else "#2E7D32"
+
+        # Create HTML page with session info
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Session Info - {browser_name}</title>
+            <style>
+                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    color: #333;
+                }}
+                .container {{
+                    background: white;
+                    border-radius: 20px;
+                    padding: 50px;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                    max-width: 600px;
+                    text-align: center;
+                }}
+                .browser-icon {{
+                    font-size: 80px;
+                    margin-bottom: 20px;
+                }}
+                h1 {{
+                    font-size: 36px;
+                    color: {browser_color};
+                    margin-bottom: 10px;
+                }}
+                .mode-badge {{
+                    display: inline-block;
+                    background: {incognito_color};
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 25px;
+                    font-weight: bold;
+                    font-size: 16px;
+                    margin: 20px 0;
+                }}
+                .profile-info {{
+                    background: #f5f5f5;
+                    padding: 15px;
+                    border-radius: 10px;
+                    margin: 20px 0;
+                    font-size: 14px;
+                    color: #666;
+                }}
+                .info-grid {{
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 15px;
+                    margin-top: 30px;
+                }}
+                .info-card {{
+                    background: #f9f9f9;
+                    padding: 20px;
+                    border-radius: 10px;
+                    border-left: 4px solid {browser_color};
+                }}
+                .info-label {{
+                    font-size: 12px;
+                    color: #999;
+                    text-transform: uppercase;
+                    margin-bottom: 5px;
+                }}
+                .info-value {{
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #333;
+                }}
+                .action-buttons {{
+                    margin-top: 30px;
+                    display: flex;
+                    gap: 10px;
+                    justify-content: center;
+                }}
+                .btn {{
+                    padding: 12px 24px;
+                    border: none;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    font-size: 14px;
+                    transition: transform 0.2s;
+                }}
+                .btn:hover {{
+                    transform: translateY(-2px);
+                }}
+                .btn-primary {{
+                    background: {browser_color};
+                    color: white;
+                }}
+                .btn-secondary {{
+                    background: #e0e0e0;
+                    color: #333;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="browser-icon">{browser_icon}</div>
+                <h1>{browser_name}</h1>
+                <div class="mode-badge">{mode_info}</div>
+                <div class="profile-info">
+                    📁 {profile_info}
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-label">Browser Type</div>
+                        <div class="info-value">{browser_name}</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Privacy Mode</div>
+                        <div class="info-value">{"Incognito" if self.current_incognito_mode else "Normal"}</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="window.location.href='https://google.com'">
+                        Start Browsing
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.location.href='about:blank'">
+                        New Tab
+                    </button>
+                </div>
+
+                <p style="margin-top: 40px; font-size: 12px; color: #999;">
+                    Tab Session Manager v1.0
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Set HTML content
+        page.set_content(html_content)
+
+    def _inject_session_indicator(self):
+        """Inject visual indicator banner on all pages."""
+        # Add route to inject indicator script on all pages
+        self.context.add_init_script(self._get_indicator_injection_script())
+
+    def _get_indicator_injection_script(self):
+        """Get JavaScript to inject session indicator banner."""
+        browser_name = self.current_browser_type.upper()
+        mode_text = "INCOGNITO" if self.current_incognito_mode else "NORMAL"
+        profile_text = f" | Profile: {self.current_profile_name}" if self.current_profile_name else ""
+
+        # Browser-specific colors
+        if self.current_browser_type == 'brave':
+            bg_color = "#FB542B"
+        elif self.current_browser_type == 'firefox':
+            bg_color = "#FF7139"
+        elif self.current_browser_type == 'chrome':
+            bg_color = "#4285F4"
+        else:
+            bg_color = "#5F6368"
+
+        if self.current_incognito_mode:
+            bg_color = "#424242"  # Dark gray for incognito
+
+        script = f"""
+        (() => {{
+            // Prevent duplicate injection
+            if (document.getElementById('session-indicator-banner')) {{
+                return;
+            }}
+
+            // Create banner
+            const banner = document.createElement('div');
+            banner.id = 'session-indicator-banner';
+            banner.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    background: {bg_color};
+                    color: white;
+                    padding: 8px 16px;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+                    font-size: 13px;
+                    font-weight: 600;
+                    z-index: 2147483647;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <span>🌐 {browser_name} | {mode_text}{profile_text}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" style="
+                        background: rgba(255,255,255,0.2);
+                        border: none;
+                        color: white;
+                        padding: 4px 12px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 11px;
+                        font-weight: bold;
+                    ">Hide</button>
+                </div>
+            `;
+
+            // Inject when DOM is ready
+            if (document.body) {{
+                document.body.appendChild(banner);
+            }} else {{
+                document.addEventListener('DOMContentLoaded', () => {{
+                    document.body.appendChild(banner);
+                }});
+            }}
+        }})();
+        """
+
+        return script
 
     def _add_tab(self, page: Page):
         """Add a tab to the tracking list."""
@@ -684,11 +941,17 @@ class TabSessionManager:
 
         return True
 
-    def run_interactive(self):
-        """Run browser and wait for user input to save."""
+    def run_interactive(self, browser_type='chrome', incognito_mode=False, profile_name=None):
+        """Run browser and wait for user input to save.
+
+        Args:
+            browser_type: Browser to launch ('chrome', 'brave', 'firefox', 'chromium')
+            incognito_mode: Launch in incognito/private mode
+            profile_name: Profile name for persistent storage
+        """
         # Only launch browser if not already running
         if not self.browser:
-            self.launch_browser()
+            self.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name)
 
         print("\n" + "="*60)
         print("Browser is running. Open tabs as needed.")
@@ -733,6 +996,8 @@ def main():
         epilog="""
 Examples:
   python tab_session_manager.py new
+  python tab_session_manager.py new --browser brave --incognito
+  python tab_session_manager.py new --browser chrome --profile work
   python tab_session_manager.py save my-research
   python tab_session_manager.py load my-research
         """
@@ -744,6 +1009,9 @@ Examples:
     new_parser = subparsers.add_parser('new', help='Start a new browser session')
     new_parser.add_argument('--no-auto-save', action='store_true', help='Disable auto-save')
     new_parser.add_argument('--auto-save-interval', type=float, default=3.0, help='Auto-save interval in seconds (default: 3.0)')
+    new_parser.add_argument('--browser', type=str, default='chrome', choices=['chrome', 'brave', 'firefox', 'chromium'], help='Browser to launch (default: chrome)')
+    new_parser.add_argument('--incognito', action='store_true', help='Launch in incognito/private mode')
+    new_parser.add_argument('--profile', type=str, help='Profile name for persistent storage (e.g., work, personal)')
 
     # Save session command
     save_parser = subparsers.add_parser('save', help='Save current session')
@@ -791,7 +1059,13 @@ Examples:
                 print(f"Auto-save enabled (interval: {auto_save_interval}s)")
             else:
                 print("Auto-save disabled")
-            manager.run_interactive()
+
+            # Get browser settings from args
+            browser_type = args.browser if hasattr(args, 'browser') else 'chrome'
+            incognito_mode = args.incognito if hasattr(args, 'incognito') else False
+            profile_name = args.profile if hasattr(args, 'profile') else None
+
+            manager.run_interactive(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name)
 
         elif args.command == 'save':
             # Connect to running browser and save session
