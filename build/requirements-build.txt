@@ -1,0 +1,14 @@
+# Build Dependencies for Browser Automation Suite
+# Install with: pip install -r requirements-build.txt
+
+# Build Tool
+pyinstaller>=6.0.0
+
+# Runtime Dependencies (also bundled in executable)
+playwright>=1.40.0
+PyQt6>=6.6.0
+PyYAML>=6.0
+requests>=2.25.0
+
+# Optional: For icon conversion
+pillow>=10.0.0
