@@ -239,7 +239,7 @@ class SessionManagerWrapper(QObject):
 
             thread = threading.Thread(target=launch_thread, daemon=False)
             thread.start()
-            thread.join(timeout=10)  # Wait up to 10 seconds for browser to start
+            thread.join(timeout=30)  # Wait up to 30 seconds for browser to start (Brave/profiles need more time)
 
             if launch_error[0]:
                 raise launch_error[0]

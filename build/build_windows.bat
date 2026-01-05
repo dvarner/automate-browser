@@ -205,10 +205,10 @@ echo Output Location:
 echo   dist\BrowserAutomation\
 echo.
 echo Executable:
-echo   dist\BrowserAutomation\BrowserAutomation.exe
+echo   dist\BrowserAutomation\BrowserAutomation_*.exe (timestamped)
 echo.
 echo Folder Structure:
-echo   BrowserAutomation.exe         - Main executable
+echo   BrowserAutomation_*.exe       - Main executable (timestamped)
 echo   chrome-extension/             - Chrome extension files
 echo   workflows/                    - Example YAML workflows
 echo   sessions/                     - Session storage (empty)
@@ -225,9 +225,9 @@ if defined size (
 )
 
 echo TESTING:
-echo   1. GUI Mode:      Double-click BrowserAutomation.exe
-echo   2. CLI Mode:      BrowserAutomation.exe list
-echo   3. Workflow Mode: BrowserAutomation.exe workflow test.yaml
+echo   1. GUI Mode:      Double-click BrowserAutomation_*.exe
+echo   2. CLI Mode:      BrowserAutomation_*.exe list
+echo   3. Workflow Mode: BrowserAutomation_*.exe workflow test.yaml
 echo.
 echo DISTRIBUTION:
 echo   Zip the entire BrowserAutomation/ folder for distribution

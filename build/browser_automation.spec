@@ -8,8 +8,12 @@ Build with: pyinstaller browser_automation.spec
 
 import sys
 import os
+from datetime import datetime
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 from pathlib import Path
+
+# Generate timestamp for build
+BUILD_TIMESTAMP = datetime.now().strftime('%y%m%d-%H%M%S')
 
 # Determine platform
 IS_WINDOWS = sys.platform == 'win32'
@@ -145,7 +149,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='BrowserAutomation',
+    name=f'BrowserAutomation_{BUILD_TIMESTAMP}',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -190,4 +194,4 @@ if IS_MACOS:
 print("[+] Spec file configuration complete")
 print(f"[*] Platform: {'Windows' if IS_WINDOWS else 'macOS' if IS_MACOS else 'Linux'}")
 print(f"[*] Console mode: True (allows CLI and GUI)")
-print(f"[*] Output name: BrowserAutomation")
+print(f"[*] Output name: BrowserAutomation_{BUILD_TIMESTAMP}")
