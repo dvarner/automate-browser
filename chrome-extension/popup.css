@@ -756,3 +756,54 @@ footer {
   gap: 10px;
   margin-top: 15px;
 }
+
+/* ============================================================================
+   REGION EXTRACT TAB STYLES
+   ============================================================================ */
+
+.region-extract-section {
+  padding: 15px 0;
+}
+
+.status-indicator {
+  background: #f0f4f8;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+  text-align: center;
+}
+
+.status-badge {
+  display: inline-block;
+  background: #2196F3;
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.status-text {
+  font-size: 13px;
+  color: #555;
+  margin: 0;
+}
+
+.button-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.instructions {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #555;
+  margin: 0;
+  padding: 10px;
+  background: #f8f9fa;
+  border-left: 3px solid #2196F3;
+  border-radius: 4px;
+}

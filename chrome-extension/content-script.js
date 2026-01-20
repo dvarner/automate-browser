@@ -9,6 +9,13 @@ let isTemplateBuilding = false;
 let selectedElement = null;
 let contextMenu = null;
 
+// Region Selection State
+let isRegionSelecting = false;
+let regionIndicator = null;
+let dragStart = null;
+let dragRect = null;
+let dimensionTooltip = null;
+
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'START_RECORDING') {
@@ -29,6 +36,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.type === 'APPLY_TEMPLATE') {
     const result = applyTemplateToPage(message.template);
     sendResponse(result);
+  } else if (message.type === 'START_REGION_SELECTION') {
+    startRegionSelection();
+    sendResponse({ success: true });
+  } else if (message.type === 'STOP_REGION_SELECTION') {
+    stopRegionSelection();
+    sendResponse({ success: true });
   }
   return true;
 });
@@ -605,4 +618,342 @@ function applyTemplateToPage(template) {
       items: []
     };
   }
+}
+
+// ============================================================================
+// === REGION SELECTION AND TEXT EXTRACTION ===
+// ============================================================================
+
+function startRegionSelection() {
+  if (isRegionSelecting) return;
+
+  isRegionSelecting = true;
+  showRegionIndicator();
+  attachRegionHandlers();
+
+  // Change cursor to crosshair
+  document.body.style.cursor = 'crosshair';
+}
+
+function stopRegionSelection() {
+  if (!isRegionSelecting) return;
+
+  isRegionSelecting = false;
+  hideRegionIndicator();
+  detachRegionHandlers();
+
+  // Cleanup any active selection rectangle
+  if (dragRect) {
+    dragRect.remove();
+    dragRect = null;
+  }
+  if (dimensionTooltip) {
+    dimensionTooltip.remove();
+    dimensionTooltip = null;
+  }
+
+  dragStart = null;
+  document.body.style.cursor = '';
+}
+
+function showRegionIndicator() {
+  // Don't create if already exists
+  if (regionIndicator) return;
+
+  regionIndicator = document.createElement('div');
+  regionIndicator.id = 'region-selection-indicator';
+  regionIndicator.textContent = '📍 Region Selection Mode';
+
+  // Styling (top-right, orange background)
+  Object.assign(regionIndicator.style, {
+    position: 'fixed',
+    top: '20px',
+    right: '20px',
+    backgroundColor: '#ff9800',
+    color: '#ffffff',
+    padding: '12px 20px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    fontFamily: 'Arial, sans-serif',
+    zIndex: '2147483647',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+    cursor: 'default',
+    userSelect: 'none'
+  });
+
+  document.body.appendChild(regionIndicator);
+}
+
+function hideRegionIndicator() {
+  if (regionIndicator) {
+    regionIndicator.remove();
+    regionIndicator = null;
+  }
+}
+
+// Mouse event handlers for region selection
+let mouseDownHandler, mouseMoveHandler, mouseUpHandler;
+
+function attachRegionHandlers() {
+  mouseDownHandler = handleMouseDown;
+  mouseMoveHandler = handleMouseMove;
+  mouseUpHandler = handleMouseUp;
+
+  document.addEventListener('mousedown', mouseDownHandler, true);
+  document.addEventListener('mousemove', mouseMoveHandler, true);
+  document.addEventListener('mouseup', mouseUpHandler, true);
+}
+
+function detachRegionHandlers() {
+  if (mouseDownHandler) {
+    document.removeEventListener('mousedown', mouseDownHandler, true);
+    document.removeEventListener('mousemove', mouseMoveHandler, true);
+    document.removeEventListener('mouseup', mouseUpHandler, true);
+  }
+}
+
+function handleMouseDown(e) {
+  if (!isRegionSelecting) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  // Start drag from current mouse position (document coordinates)
+  dragStart = {
+    x: e.pageX,
+    y: e.pageY
+  };
+
+  createSelectionRectangle(dragStart);
+  createDimensionTooltip(dragStart);
+}
+
+function handleMouseMove(e) {
+  if (!isRegionSelecting || !dragStart) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const current = {
+    x: e.pageX,
+    y: e.pageY
+  };
+
+  updateSelectionRectangle(dragStart, current);
+  updateDimensionTooltip(dragStart, current);
+}
+
+function handleMouseUp(e) {
+  if (!isRegionSelecting || !dragStart) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const end = {
+    x: e.pageX,
+    y: e.pageY
+  };
+
+  // Calculate final region
+  const region = calculateRegion(dragStart, end);
+
+  // Cleanup UI
+  if (dragRect) {
+    dragRect.remove();
+    dragRect = null;
+  }
+  if (dimensionTooltip) {
+    dimensionTooltip.remove();
+    dimensionTooltip = null;
+  }
+  dragStart = null;
+
+  // Extract text from region
+  extractTextFromRegion(region);
+
+  // Stop selection mode
+  stopRegionSelection();
+}
+
+function createSelectionRectangle(start) {
+  dragRect = document.createElement('div');
+  dragRect.id = 'region-drag-rectangle';
+
+  Object.assign(dragRect.style, {
+    position: 'absolute',
+    left: start.x + 'px',
+    top: start.y + 'px',
+    width: '0px',
+    height: '0px',
+    backgroundColor: 'rgba(33, 150, 243, 0.3)',
+    border: '2px solid #2196F3',
+    zIndex: '2147483646',
+    pointerEvents: 'none'
+  });
+
+  document.body.appendChild(dragRect);
+}
+
+function updateSelectionRectangle(start, current) {
+  if (!dragRect) return;
+
+  const left = Math.min(start.x, current.x);
+  const top = Math.min(start.y, current.y);
+  const width = Math.abs(current.x - start.x);
+  const height = Math.abs(current.y - start.y);
+
+  dragRect.style.left = left + 'px';
+  dragRect.style.top = top + 'px';
+  dragRect.style.width = width + 'px';
+  dragRect.style.height = height + 'px';
+}
+
+function createDimensionTooltip(start) {
+  dimensionTooltip = document.createElement('div');
+  dimensionTooltip.id = 'region-dimension-tooltip';
+
+  Object.assign(dimensionTooltip.style, {
+    position: 'absolute',
+    left: start.x + 'px',
+    top: (start.y - 30) + 'px',
+    backgroundColor: '#2196F3',
+    color: '#ffffff',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontFamily: 'monospace',
+    zIndex: '2147483647',
+    pointerEvents: 'none',
+    whiteSpace: 'nowrap'
+  });
+
+  dimensionTooltip.textContent = '0 × 0';
+  document.body.appendChild(dimensionTooltip);
+}
+
+function updateDimensionTooltip(start, current) {
+  if (!dimensionTooltip) return;
+
+  const width = Math.abs(current.x - start.x);
+  const height = Math.abs(current.y - start.y);
+
+  dimensionTooltip.textContent = `${width} × ${height}`;
+  dimensionTooltip.style.left = current.x + 10 + 'px';
+  dimensionTooltip.style.top = current.y - 30 + 'px';
+}
+
+function calculateRegion(start, end) {
+  const x = Math.min(start.x, end.x);
+  const y = Math.min(start.y, end.y);
+  const width = Math.abs(end.x - start.x);
+  const height = Math.abs(end.y - start.y);
+
+  return { x, y, width, height };
+}
+
+// ============================================================================
+// === TEXT EXTRACTION ALGORITHM ===
+// ============================================================================
+
+function extractTextFromRegion(region) {
+  console.log('[Region Extract] Extracting text from region:', region);
+
+  const textElements = [];
+  const allTextNodes = getVisibleTextNodes();
+
+  // Check each text node to see if it intersects with the selection region
+  allTextNodes.forEach((node, index) => {
+    try {
+      // Skip if no parent element
+      if (!node.parentElement) return;
+
+      // Get bounding rect (viewport coordinates)
+      const rect = node.parentElement.getBoundingClientRect();
+
+      // Convert to document coordinates
+      const nodeRect = {
+        x: rect.left + window.pageXOffset,
+        y: rect.top + window.pageYOffset,
+        width: rect.width,
+        height: rect.height
+      };
+
+      // Check intersection
+      if (rectanglesIntersect(nodeRect, region)) {
+        const text = node.textContent.trim();
+
+        // Only include non-empty text
+        if (text.length > 0) {
+          textElements.push({
+            text: text,
+            x: nodeRect.x,
+            y: nodeRect.y,
+            tagName: node.parentElement.tagName,
+            selector: generateSelector(node.parentElement)
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[Region Extract] Error processing text node:', e);
+    }
+  });
+
+  console.log(`[Region Extract] Found ${textElements.length} text elements`);
+
+  // Send to background
+  chrome.runtime.sendMessage({
+    type: 'TEXT_EXTRACTED',
+    region: region,
+    textElements: textElements
+  });
+}
+
+function getVisibleTextNodes() {
+  const textNodes = [];
+  const walker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: function(node) {
+        // Skip whitespace-only nodes
+        if (!node.textContent.trim()) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        // Check if parent element is visible
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+
+        const style = window.getComputedStyle(parent);
+        if (style.display === 'none' ||
+            style.visibility === 'hidden' ||
+            style.opacity === '0') {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        // Check if element has size
+        const rect = parent.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+
+  let node;
+  while (node = walker.nextNode()) {
+    textNodes.push(node);
+  }
+
+  return textNodes;
+}
+
+function rectanglesIntersect(rect1, rect2) {
+  return !(rect1.x + rect1.width < rect2.x ||
+           rect2.x + rect2.width < rect1.x ||
+           rect1.y + rect1.height < rect2.y ||
+           rect2.y + rect2.height < rect1.y);
 }

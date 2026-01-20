@@ -19,6 +19,7 @@
       <button class="tab-btn" data-tab="record">🔴 Record Workflow</button>
       <button class="tab-btn" data-tab="scrape">🎯 Scrape Template</button>
       <button class="tab-btn" data-tab="batch-scrape">📊 Batch Scrape</button>
+      <button class="tab-btn" data-tab="region-extract">📍 Region Extract</button>
     </div>
 
     <main>
@@ -280,6 +281,68 @@
               <span class="btn-icon">💾</span>
               Export JSON
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Region Extract Tab Content -->
+      <div id="region-extract-tab" class="tab-content">
+        <div class="region-extract-section">
+          <div class="info-section">
+            <p class="instructions">
+              📍 Select a region of text on any webpage by dragging a rectangle.
+              All text elements within the region will be extracted.
+            </p>
+          </div>
+
+          <div class="status-indicator">
+            <div class="status-badge" id="region-status-badge">Ready</div>
+            <p class="status-text" id="region-status-text">Click "Start Selection" to begin</p>
+          </div>
+
+          <div class="button-section">
+            <button id="start-region-selection-btn" class="primary-btn">
+              <span class="btn-icon">📍</span>
+              Start Selection
+            </button>
+            <button id="cancel-region-selection-btn" class="secondary-btn hidden">
+              <span class="btn-icon">❌</span>
+              Cancel
+            </button>
+            <button id="clear-region-text-btn" class="secondary-btn hidden">
+              <span class="btn-icon">🗑️</span>
+              Clear
+            </button>
+          </div>
+
+          <div id="region-status" class="status hidden"></div>
+
+          <!-- Results Section -->
+          <div id="region-results" class="hidden" style="margin-top: 20px;">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">
+              Extracted Text: <span id="region-text-count">0</span> elements
+            </h3>
+
+            <div id="region-text-preview" style="background: #f8f9fa; border-radius: 6px; padding: 12px; max-height: 250px; overflow-y: auto; font-size: 12px; margin-bottom: 12px; white-space: pre-wrap; font-family: 'Segoe UI', Arial, sans-serif;"></div>
+
+            <div class="button-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <button id="copy-region-text-btn" class="primary-btn">
+                <span class="btn-icon">📋</span>
+                Copy to Clipboard
+              </button>
+              <button id="download-region-txt-btn" class="secondary-btn">
+                <span class="btn-icon">💾</span>
+                Download TXT
+              </button>
+              <button id="download-region-json-btn" class="secondary-btn">
+                <span class="btn-icon">📄</span>
+                Download JSON
+              </button>
+              <button id="download-region-csv-btn" class="secondary-btn">
+                <span class="btn-icon">📊</span>
+                Download CSV
+              </button>
+            </div>
           </div>
         </div>
       </div>

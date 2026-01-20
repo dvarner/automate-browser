@@ -18,6 +18,14 @@ let templateState = {
   tabId: null
 };
 
+// Region Extract State
+let regionExtractState = {
+  isSelecting: false,
+  selectedRegion: null,  // { x, y, width, height }
+  extractedText: [],     // Array of text elements
+  tabId: null
+};
+
 // Listen for messages from popup and content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
@@ -94,6 +102,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'SET_CONTAINER':
       templateState.containerSelector = message.selector;
       templateState.detectedItems = message.items || [];
+      sendResponse({ success: true });
+      break;
+
+    // Region Extract Messages
+    case 'GET_REGION_STATE':
+      sendResponse(regionExtractState);
+      break;
+
+    case 'START_REGION_SELECTION':
+      startRegionSelection(message.tabId, message.url);
+      sendResponse({ success: true, state: regionExtractState });
+      break;
+
+    case 'STOP_REGION_SELECTION':
+      stopRegionSelection();
+      sendResponse({ success: true });
+      break;
+
+    case 'REGION_SELECTED':
+      regionExtractState.selectedRegion = message.region;
+      sendResponse({ success: true });
+      break;
+
+    case 'TEXT_EXTRACTED':
+      regionExtractState.extractedText = message.textElements;
+      regionExtractState.selectedRegion = message.region;
+      // Notify popup to update UI
+      chrome.runtime.sendMessage({ type: 'REGION_EXTRACT_UPDATED', state: regionExtractState })
+        .catch(() => {});
+      sendResponse({ success: true });
+      break;
+
+    case 'CLEAR_EXTRACTED_TEXT':
+      regionExtractState.extractedText = [];
+      regionExtractState.selectedRegion = null;
       sendResponse({ success: true });
       break;
   }
@@ -230,6 +273,35 @@ async function stopTemplateBuilding() {
     }
   }
   templateState.isBuilding = false;
+}
+
+// === Region Extract Functions ===
+
+async function startRegionSelection(tabId, url) {
+  regionExtractState = {
+    isSelecting: true,
+    selectedRegion: null,
+    extractedText: [],
+    tabId: tabId
+  };
+
+  await chrome.scripting.executeScript({
+    target: { tabId: tabId },
+    files: ['content-script.js']
+  });
+
+  await chrome.tabs.sendMessage(tabId, { type: 'START_REGION_SELECTION' });
+}
+
+async function stopRegionSelection() {
+  if (regionExtractState.tabId) {
+    try {
+      await chrome.tabs.sendMessage(regionExtractState.tabId, { type: 'STOP_REGION_SELECTION' });
+    } catch (e) {
+      console.log('[Background] Could not stop region selection on tab:', e.message);
+    }
+  }
+  regionExtractState.isSelecting = false;
 }
 
 // Keep service worker alive

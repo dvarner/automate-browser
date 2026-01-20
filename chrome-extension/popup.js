@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadRecordingState();
   await loadTemplateState();
   await loadBatchScrapeState();
+  await loadRegionExtractState();
   setupTabSwitching();
 });
 
@@ -544,6 +545,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.type === 'TEMPLATE_UPDATED') {
     templateState = message.state;
     updateTemplateUI();
+  } else if (message.type === 'REGION_EXTRACT_UPDATED') {
+    regionExtractState = message.state;
+    updateRegionExtractUI();
   }
   return true;
 });
@@ -944,6 +948,231 @@ function handleBatchExport() {
 
 function showBatchStatus(message, type) {
   const statusEl = document.getElementById('batch-status');
+  statusEl.textContent = message;
+  statusEl.className = `status ${type}`;
+  statusEl.classList.remove('hidden');
+
+  setTimeout(() => {
+    statusEl.classList.add('hidden');
+  }, 3000);
+}
+
+// ============================================================================
+// === REGION EXTRACT FUNCTIONS ===
+// ============================================================================
+
+let regionExtractState = null;
+
+async function loadRegionExtractState() {
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'GET_REGION_STATE' });
+    regionExtractState = response;
+    updateRegionExtractUI();
+
+    // Setup event listeners
+    document.getElementById('start-region-selection-btn').addEventListener('click', handleStartRegionSelection);
+    document.getElementById('cancel-region-selection-btn').addEventListener('click', handleCancelRegionSelection);
+    document.getElementById('clear-region-text-btn').addEventListener('click', handleClearRegionText);
+
+    // Export buttons
+    document.getElementById('copy-region-text-btn').addEventListener('click', copyRegionText);
+    document.getElementById('download-region-txt-btn').addEventListener('click', downloadRegionTXT);
+    document.getElementById('download-region-json-btn').addEventListener('click', downloadRegionJSON);
+    document.getElementById('download-region-csv-btn').addEventListener('click', downloadRegionCSV);
+  } catch (error) {
+    console.error('[Popup] Error loading region extract state:', error);
+  }
+}
+
+function updateRegionExtractUI() {
+  if (!regionExtractState) return;
+
+  const statusBadge = document.getElementById('region-status-badge');
+  const statusText = document.getElementById('region-status-text');
+  const startBtn = document.getElementById('start-region-selection-btn');
+  const cancelBtn = document.getElementById('cancel-region-selection-btn');
+  const clearBtn = document.getElementById('clear-region-text-btn');
+  const resultsDiv = document.getElementById('region-results');
+
+  if (regionExtractState.isSelecting) {
+    // Selecting state
+    statusBadge.textContent = 'Selecting...';
+    statusBadge.style.background = '#ff9800';
+    statusText.textContent = 'Drag a rectangle on the page to select a region';
+    startBtn.classList.add('hidden');
+    cancelBtn.classList.remove('hidden');
+    clearBtn.classList.add('hidden');
+    resultsDiv.classList.add('hidden');
+  } else if (regionExtractState.extractedText && regionExtractState.extractedText.length > 0) {
+    // Results available
+    statusBadge.textContent = 'Complete';
+    statusBadge.style.background = '#4caf50';
+    statusText.textContent = `Extracted ${regionExtractState.extractedText.length} text elements`;
+    startBtn.classList.remove('hidden');
+    cancelBtn.classList.add('hidden');
+    clearBtn.classList.remove('hidden');
+    resultsDiv.classList.remove('hidden');
+
+    // Display results
+    displayRegionResults();
+  } else {
+    // Ready state
+    statusBadge.textContent = 'Ready';
+    statusBadge.style.background = '#2196F3';
+    statusText.textContent = 'Click "Start Selection" to begin';
+    startBtn.classList.remove('hidden');
+    cancelBtn.classList.add('hidden');
+    clearBtn.classList.add('hidden');
+    resultsDiv.classList.add('hidden');
+  }
+}
+
+function displayRegionResults() {
+  if (!regionExtractState || !regionExtractState.extractedText) return;
+
+  const count = regionExtractState.extractedText.length;
+  const preview = regionExtractState.extractedText.map(e => e.text).join('\n\n');
+
+  document.getElementById('region-text-count').textContent = count;
+  document.getElementById('region-text-preview').textContent = preview;
+}
+
+async function handleStartRegionSelection() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    const response = await chrome.runtime.sendMessage({
+      type: 'START_REGION_SELECTION',
+      tabId: tab.id,
+      url: tab.url
+    });
+
+    if (response.success) {
+      regionExtractState = response.state;
+      updateRegionExtractUI();
+    }
+  } catch (error) {
+    console.error('[Popup] Error starting region selection:', error);
+    showRegionStatus('Failed to start selection: ' + error.message, 'error');
+  }
+}
+
+async function handleCancelRegionSelection() {
+  try {
+    await chrome.runtime.sendMessage({ type: 'STOP_REGION_SELECTION' });
+    await loadRegionExtractState();
+  } catch (error) {
+    console.error('[Popup] Error canceling region selection:', error);
+  }
+}
+
+async function handleClearRegionText() {
+  try {
+    await chrome.runtime.sendMessage({ type: 'CLEAR_EXTRACTED_TEXT' });
+    await loadRegionExtractState();
+  } catch (error) {
+    console.error('[Popup] Error clearing extracted text:', error);
+  }
+}
+
+// Export functions
+async function copyRegionText() {
+  if (!regionExtractState || !regionExtractState.extractedText) return;
+
+  const text = regionExtractState.extractedText.map(e => e.text).join('\n');
+
+  try {
+    await navigator.clipboard.writeText(text);
+    showRegionStatus('Copied to clipboard!', 'success');
+  } catch (error) {
+    console.error('[Popup] Error copying to clipboard:', error);
+    showRegionStatus('Failed to copy to clipboard', 'error');
+  }
+}
+
+function downloadRegionTXT() {
+  if (!regionExtractState || !regionExtractState.extractedText) return;
+
+  const text = regionExtractState.extractedText.map(e => e.text).join('\n\n');
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+
+  const now = new Date();
+  const timestamp = now.toISOString().split('T')[0].replace(/-/g, '');
+  const filename = `region-text-${timestamp}.txt`;
+
+  chrome.downloads.download({
+    url: url,
+    filename: filename,
+    saveAs: true
+  });
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showRegionStatus('TXT download started', 'success');
+}
+
+function downloadRegionJSON() {
+  if (!regionExtractState || !regionExtractState.extractedText) return;
+
+  const data = {
+    region: regionExtractState.selectedRegion,
+    extracted_at: new Date().toISOString(),
+    count: regionExtractState.extractedText.length,
+    elements: regionExtractState.extractedText
+  };
+
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const now = new Date();
+  const timestamp = now.toISOString().split('T')[0].replace(/-/g, '');
+  const filename = `region-text-${timestamp}.json`;
+
+  chrome.downloads.download({
+    url: url,
+    filename: filename,
+    saveAs: true
+  });
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showRegionStatus('JSON download started', 'success');
+}
+
+function downloadRegionCSV() {
+  if (!regionExtractState || !regionExtractState.extractedText) return;
+
+  // CSV header
+  let csv = 'Text,Tag,X,Y\n';
+
+  // CSV rows
+  regionExtractState.extractedText.forEach(element => {
+    const text = `"${element.text.replace(/"/g, '""')}"`;  // Escape quotes
+    const tag = element.tagName;
+    const x = Math.round(element.x);
+    const y = Math.round(element.y);
+    csv += `${text},${tag},${x},${y}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+
+  const now = new Date();
+  const timestamp = now.toISOString().split('T')[0].replace(/-/g, '');
+  const filename = `region-text-${timestamp}.csv`;
+
+  chrome.downloads.download({
+    url: url,
+    filename: filename,
+    saveAs: true
+  });
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showRegionStatus('CSV download started', 'success');
+}
+
+function showRegionStatus(message, type) {
+  const statusEl = document.getElementById('region-status');
   statusEl.textContent = message;
   statusEl.className = `status ${type}`;
   statusEl.classList.remove('hidden');
