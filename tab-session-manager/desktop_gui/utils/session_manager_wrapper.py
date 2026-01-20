@@ -92,6 +92,10 @@ class SessionManagerWrapper(QObject):
             details = {
                 'name': session_name,
                 'created_at': data.get('created_at', 'Unknown'),
+                'browser_type': data.get('browser_type', 'chrome'),
+                'profile_name': data.get('profile_name'),
+                'incognito_mode': data.get('incognito_mode', False),
+                'extensions': data.get('extensions'),
                 'groups': [],
                 'ungrouped_tabs': []
             }
@@ -181,7 +185,7 @@ class SessionManagerWrapper(QObject):
             traceback.print_exc()
             return False
 
-    def create_new_session(self, session_name, auto_save=True, auto_save_interval=3.0, browser_type='chrome', incognito_mode=False, profile_name=None):
+    def create_new_session(self, session_name, auto_save=True, auto_save_interval=3.0, browser_type='chrome', incognito_mode=False, profile_name=None, extensions=None):
         """Create a new browser session.
 
         Args:
@@ -191,6 +195,7 @@ class SessionManagerWrapper(QObject):
             browser_type: Browser to use ('chrome', 'brave', 'firefox', 'chromium')
             incognito_mode: Launch in incognito/private mode
             profile_name: Optional profile name for persistent storage
+            extensions: Optional list of paths to unpacked extension directories
 
         Returns:
             bool: True if successful, False otherwise
@@ -199,6 +204,7 @@ class SessionManagerWrapper(QObject):
             print(f"[DEBUG] Creating session: {session_name}")
             print(f"[DEBUG] Browser: {browser_type}, Incognito: {incognito_mode}")
             print(f"[DEBUG] Profile: {profile_name if profile_name else 'None (ephemeral)'}")
+            print(f"[DEBUG] Extensions: {len(extensions) if extensions else 0}")
 
             # Validate session name
             if not self._validate_session_name(session_name):
@@ -226,7 +232,7 @@ class SessionManagerWrapper(QObject):
                     import os
                     os.environ['PLAYWRIGHT_PYTHON_SYNC_LAUNCH'] = '1'
 
-                    self.active_manager.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name)
+                    self.active_manager.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name, extensions=extensions)
                     launch_success[0] = True
                 except Exception as e:
                     # Check if it's just the asyncio warning but browser actually launched

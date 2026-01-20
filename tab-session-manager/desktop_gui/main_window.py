@@ -203,15 +203,17 @@ class MainWindow(QMainWindow):
             browser_type = dialog.get_browser_type()
             incognito_mode = dialog.get_incognito_mode()
             profile_name = dialog.get_profile_name()
+            extensions = dialog.get_extensions()
 
             print(f"[MainWindow] Session name: {session_name}")
             print(f"[MainWindow] Browser: {browser_type}, Incognito: {incognito_mode}")
             print(f"[MainWindow] Profile: {profile_name if profile_name else 'None'}")
+            print(f"[MainWindow] Extensions: {len(extensions) if extensions else 0}")
             print(f"[MainWindow] Auto-save: {auto_save}, Interval: {interval}")
 
             # Create new session via session manager
             success = self.session_manager.create_new_session(
-                session_name, auto_save, interval, browser_type, incognito_mode, profile_name
+                session_name, auto_save, interval, browser_type, incognito_mode, profile_name, extensions
             )
 
             print(f"[MainWindow] Create result: {success}")

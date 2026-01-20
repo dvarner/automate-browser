@@ -114,8 +114,52 @@ class TabSessionManager:
         self.current_profile_name = None  # Track current profile name
         self.current_incognito_mode = False  # Track incognito status
         self.current_session_name = 'auto-save'  # Track current session name for auto-save
+        self.current_extensions = None  # Track loaded extensions
 
-    def launch_browser(self, browser_type='chrome', incognito_mode=False, profile_name=None):
+    def _validate_extensions(self, extensions, browser_type):
+        """Validate extension paths and return list of valid paths.
+
+        Args:
+            extensions: List of extension directory paths
+            browser_type: Browser type ('chrome', 'brave', 'chromium', 'firefox')
+
+        Returns:
+            List of valid extension paths (empty list if none valid or unsupported)
+        """
+        if not extensions:
+            return []
+
+        # Extensions not supported for Firefox
+        if browser_type == 'firefox':
+            print("[WARNING] Extensions are not supported for Firefox. Skipping extensions.")
+            return []
+
+        valid_paths = []
+        for ext_path in extensions:
+            ext_dir = Path(ext_path)
+
+            # Check if directory exists
+            if not ext_dir.exists():
+                print(f"[WARNING] Extension path does not exist: {ext_path}")
+                continue
+
+            if not ext_dir.is_dir():
+                print(f"[WARNING] Extension path is not a directory: {ext_path}")
+                continue
+
+            # Check for manifest.json
+            manifest_file = ext_dir / 'manifest.json'
+            if not manifest_file.exists():
+                print(f"[WARNING] No manifest.json found in extension: {ext_path}")
+                continue
+
+            # Use absolute path
+            valid_paths.append(str(ext_dir.resolve()))
+            print(f"  Extension validated: {ext_dir.name}")
+
+        return valid_paths
+
+    def launch_browser(self, browser_type='chrome', incognito_mode=False, profile_name=None, extensions=None):
         """Launch browser in headed mode and return browser instance.
 
         Args:
@@ -124,6 +168,7 @@ class TabSessionManager:
             profile_name: Optional profile name for persistent storage (e.g., 'work', 'personal')
                          If None or empty, uses ephemeral session (current behavior)
                          Ignored if incognito_mode=True
+            extensions: Optional list of paths to unpacked extension directories (Chromium only)
         """
         print(f"Launching {browser_type} browser" + (" in incognito mode..." if incognito_mode else "..."))
         self.playwright = sync_playwright().start()
@@ -193,6 +238,15 @@ class TabSessionManager:
             if incognito_mode:
                 launch_args.append('--incognito')
 
+            # Validate and add extensions
+            valid_extensions = self._validate_extensions(extensions, browser_type_lower)
+            if valid_extensions:
+                extensions_arg = ','.join(valid_extensions)
+                launch_args.append(f'--load-extension={extensions_arg}')
+                launch_args.append(f'--disable-extensions-except={extensions_arg}')
+                print(f"  Loading {len(valid_extensions)} extension(s)")
+            self.current_extensions = valid_extensions if valid_extensions else None
+
             launch_kwargs = {
                 'headless': False,
                 'args': launch_args
@@ -253,6 +307,15 @@ class TabSessionManager:
             ]
             if incognito_mode:
                 launch_args.append('--incognito')
+
+            # Validate and add extensions
+            valid_extensions = self._validate_extensions(extensions, browser_type_lower)
+            if valid_extensions:
+                extensions_arg = ','.join(valid_extensions)
+                launch_args.append(f'--load-extension={extensions_arg}')
+                launch_args.append(f'--disable-extensions-except={extensions_arg}')
+                print(f"  Loading {len(valid_extensions)} extension(s)")
+            self.current_extensions = valid_extensions if valid_extensions else None
 
             if use_persistent_profile:
                 self.context = self.playwright.chromium.launch_persistent_context(
@@ -730,6 +793,7 @@ class TabSessionManager:
                 'browser_type': self.current_browser_type,
                 'profile_name': self.current_profile_name,
                 'incognito_mode': self.current_incognito_mode,
+                'extensions': self.current_extensions,
                 'groups': updated_groups
             }
 
@@ -750,6 +814,7 @@ class TabSessionManager:
                 'browser_type': self.current_browser_type,
                 'profile_name': self.current_profile_name,
                 'incognito_mode': self.current_incognito_mode,
+                'extensions': self.current_extensions,
                 'tabs': current_tabs
             }
             self.tabs = current_tabs  # Update tracked tabs
@@ -860,6 +925,7 @@ class TabSessionManager:
         browser_type = session_data.get('browser_type', 'chrome')
         profile_name = session_data.get('profile_name')  # May be None
         incognito_mode = session_data.get('incognito_mode', False)
+        extensions = session_data.get('extensions')  # May be None or list
 
         # Parse tabs (handle both old and new format)
         tabs = self._parse_session_tabs(session_data, group_filter)
@@ -882,10 +948,12 @@ class TabSessionManager:
         if group_filter:
             print(f"  Groups: {', '.join(group_filter)}")
         print(f"  Tabs: {len(tabs)}")
+        if extensions:
+            print(f"  Extensions: {len(extensions)}")
 
         # Launch browser if not already running
         if not self.browser:
-            self.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name)
+            self.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name, extensions=extensions)
 
         # Close the initial blank page if it exists
         if self.context.pages:
@@ -975,17 +1043,18 @@ class TabSessionManager:
 
         return True
 
-    def run_interactive(self, browser_type='chrome', incognito_mode=False, profile_name=None):
+    def run_interactive(self, browser_type='chrome', incognito_mode=False, profile_name=None, extensions=None):
         """Run browser and wait for user input to save.
 
         Args:
             browser_type: Browser to launch ('chrome', 'brave', 'firefox', 'chromium')
             incognito_mode: Launch in incognito/private mode
             profile_name: Profile name for persistent storage
+            extensions: List of paths to unpacked extension directories
         """
         # Only launch browser if not already running
         if not self.browser:
-            self.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name)
+            self.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name, extensions=extensions)
 
         print("\n" + "="*60)
         print("Browser is running. Open tabs as needed.")
@@ -1032,6 +1101,7 @@ Examples:
   python tab_session_manager.py new
   python tab_session_manager.py new --browser brave --incognito
   python tab_session_manager.py new --browser chrome --profile work
+  python tab_session_manager.py new --browser chrome --extension "D:/Extensions/ublock"
   python tab_session_manager.py save my-research
   python tab_session_manager.py load my-research
         """
@@ -1046,6 +1116,8 @@ Examples:
     new_parser.add_argument('--browser', type=str, default='chrome', choices=['chrome', 'brave', 'firefox', 'chromium'], help='Browser to launch (default: chrome)')
     new_parser.add_argument('--incognito', action='store_true', help='Launch in incognito/private mode')
     new_parser.add_argument('--profile', type=str, help='Profile name for persistent storage (e.g., work, personal)')
+    new_parser.add_argument('--extension', type=str, action='append', dest='extensions',
+        help='Path to unpacked extension directory (can specify multiple times)')
 
     # Save session command
     save_parser = subparsers.add_parser('save', help='Save current session')
@@ -1098,8 +1170,9 @@ Examples:
             browser_type = args.browser if hasattr(args, 'browser') else 'chrome'
             incognito_mode = args.incognito if hasattr(args, 'incognito') else False
             profile_name = args.profile if hasattr(args, 'profile') else None
+            extensions = args.extensions if hasattr(args, 'extensions') else None
 
-            manager.run_interactive(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name)
+            manager.run_interactive(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name, extensions=extensions)
 
         elif args.command == 'save':
             # Connect to running browser and save session

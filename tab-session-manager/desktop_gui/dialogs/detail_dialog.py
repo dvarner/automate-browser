@@ -50,6 +50,7 @@ class SessionDetailDialog(QDialog):
         browser_type = self.details.get('browser_type', 'Unknown')
         profile_name = self.details.get('profile_name')
         incognito_mode = self.details.get('incognito_mode', False)
+        extensions = self.details.get('extensions')
 
         if profile_name:
             info_text += f"Browser: {browser_type.title()} (Profile: {profile_name})"
@@ -57,6 +58,11 @@ class SessionDetailDialog(QDialog):
             info_text += f"Browser: {browser_type.title()} (Incognito)"
         else:
             info_text += f"Browser: {browser_type.title()}"
+
+        # Add extensions info if present
+        if extensions:
+            ext_names = [ext.split('\\')[-1].split('/')[-1] for ext in extensions]
+            info_text += f"\nExtensions: {', '.join(ext_names)}"
 
         info_label = QLabel(info_text)
         info_label.setStyleSheet("""

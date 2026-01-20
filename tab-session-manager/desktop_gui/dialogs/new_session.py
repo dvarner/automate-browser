@@ -4,10 +4,12 @@ New session dialog - prompts user to create a new browser session.
 
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-    QLineEdit, QCheckBox, QSpinBox, QPushButton, QMessageBox, QComboBox
+    QLineEdit, QCheckBox, QSpinBox, QPushButton, QMessageBox, QComboBox,
+    QListWidget, QFileDialog
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPalette, QColor
+from pathlib import Path
 
 
 class NewSessionDialog(QDialog):
@@ -25,6 +27,7 @@ class NewSessionDialog(QDialog):
         self.browser_type = "chrome"
         self.incognito_mode = False
         self.profile_name = ""
+        self.extensions = []
 
         self.init_ui()
 
@@ -136,6 +139,82 @@ class NewSessionDialog(QDialog):
 
         layout.addLayout(profile_layout)
 
+        # Extensions section
+        ext_layout = QVBoxLayout()
+
+        ext_label = QLabel("Extensions (Chromium only):")
+        ext_label.setStyleSheet("color: #000000; font-weight: bold; font-size: 11pt;")
+        ext_layout.addWidget(ext_label)
+
+        self.extension_list = QListWidget()
+        self.extension_list.setMaximumHeight(80)
+        self.extension_list.setStyleSheet("""
+            QListWidget {
+                background-color: #ffffff;
+                color: #000000;
+                border: 2px solid #bdbdbd;
+                border-radius: 4px;
+                font-size: 9pt;
+            }
+            QListWidget::item {
+                color: #000000;
+                padding: 4px;
+            }
+            QListWidget::item:selected {
+                background-color: #1976D2;
+                color: #ffffff;
+            }
+        """)
+        ext_layout.addWidget(self.extension_list)
+
+        ext_buttons_layout = QHBoxLayout()
+
+        add_ext_button = QPushButton("Add Extension...")
+        add_ext_button.setStyleSheet("""
+            QPushButton {
+                background-color: #1976D2;
+                color: #ffffff;
+                border: 2px solid #1565C0;
+                padding: 6px 12px;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 9pt;
+            }
+            QPushButton:hover {
+                background-color: #1E88E5;
+            }
+        """)
+        add_ext_button.clicked.connect(self.on_add_extension)
+        ext_buttons_layout.addWidget(add_ext_button)
+
+        remove_ext_button = QPushButton("Remove Selected")
+        remove_ext_button.setStyleSheet("""
+            QPushButton {
+                background-color: #757575;
+                color: #ffffff;
+                border: 2px solid #616161;
+                padding: 6px 12px;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 9pt;
+            }
+            QPushButton:hover {
+                background-color: #9E9E9E;
+            }
+        """)
+        remove_ext_button.clicked.connect(self.on_remove_extension)
+        ext_buttons_layout.addWidget(remove_ext_button)
+
+        ext_buttons_layout.addStretch()
+        ext_layout.addLayout(ext_buttons_layout)
+
+        # Extension hint
+        ext_hint = QLabel("Select unpacked extension directories containing manifest.json")
+        ext_hint.setStyleSheet("color: #616161; font-size: 9pt; font-style: italic;")
+        ext_layout.addWidget(ext_hint)
+
+        layout.addLayout(ext_layout)
+
         # Auto-save checkbox
         self.auto_save_checkbox = QCheckBox("Enable auto-save")
         self.auto_save_checkbox.setChecked(True)
@@ -218,6 +297,47 @@ class NewSessionDialog(QDialog):
         enabled = (state == Qt.CheckState.Checked.value)
         self.interval_spin.setEnabled(enabled)
 
+    def on_add_extension(self):
+        """Handle add extension button click."""
+        ext_dir = QFileDialog.getExistingDirectory(
+            self,
+            "Select Extension Directory",
+            "",
+            QFileDialog.Option.ShowDirsOnly
+        )
+
+        if ext_dir:
+            ext_path = Path(ext_dir)
+
+            # Check for manifest.json
+            manifest_file = ext_path / 'manifest.json'
+            if not manifest_file.exists():
+                QMessageBox.warning(
+                    self,
+                    "Invalid Extension",
+                    f"No manifest.json found in:\n{ext_dir}\n\nPlease select an unpacked extension directory."
+                )
+                return
+
+            # Check if already added
+            if ext_dir in self.extensions:
+                QMessageBox.information(
+                    self,
+                    "Already Added",
+                    "This extension has already been added."
+                )
+                return
+
+            self.extensions.append(ext_dir)
+            self.extension_list.addItem(ext_path.name)
+
+    def on_remove_extension(self):
+        """Handle remove extension button click."""
+        current_row = self.extension_list.currentRow()
+        if current_row >= 0:
+            self.extension_list.takeItem(current_row)
+            del self.extensions[current_row]
+
     def on_create(self):
         """Handle create button click."""
         session_name = self.name_input.text().strip()
@@ -284,3 +404,7 @@ class NewSessionDialog(QDialog):
     def get_profile_name(self):
         """Get the entered profile name."""
         return self.profile_name
+
+    def get_extensions(self):
+        """Get the list of extension paths."""
+        return self.extensions if self.extensions else None
