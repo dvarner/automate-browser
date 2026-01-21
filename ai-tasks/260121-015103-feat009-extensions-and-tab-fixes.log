@@ -1,0 +1,84 @@
+# Session Log: FEAT-009 Extension Loading & Tab Loading Fixes
+# Date: 2026-01-21
+# Duration: ~2 hours
+
+## Summary
+Implemented extension loading support for browser sessions and fixed critical bug
+where manually opened tabs (Ctrl+T) would stop loading after 1-2 tabs.
+
+## Features Implemented
+
+### FEAT-009: Extension Loading Support
+- Added `_validate_extensions()` method to check paths and manifest.json
+- Updated `launch_browser()` with `--load-extension` and `--disable-extensions-except` args
+- Extensions saved to session JSON and restored when loading sessions
+- Added `--extension` CLI argument (repeatable for multiple extensions)
+- Added extension picker UI in New Session dialog with add/remove buttons
+- Display extension names in session detail dialog
+
+### Web Security Toggle
+- Made `--disable-web-security` opt-in instead of always-on
+- Added checkbox in New Session dialog: "Disable Web Security (for automation)"
+- Added `--disable-web-security` CLI flag
+- Default OFF for normal browsing (some sites block when enabled)
+- Enable for automation/cross-origin data gathering
+
+## Bugs Fixed
+
+### Critical: Manual Tabs Not Loading
+**Symptom**: First tab loads, but Ctrl+T tabs 2, 3, etc. would not load (spinner forever)
+
+**Root Cause**: `time.sleep()` in the main loop blocks Playwright's event loop,
+preventing it from processing browser events for manually opened tabs.
+
+**Solution**:
+1. Use `page.wait_for_timeout()` instead of `time.sleep()` - keeps Playwright event loop active
+2. For GUI: Keep browser thread running with event loop processing
+3. Set `_browser_running` flag before keep-alive loop starts (was False causing loop to skip)
+
+### GUI Threading Issues
+- Added `gui_mode` flag to disable periodic auto-save timer in GUI mode
+- Periodic timer was causing greenlet thread conflicts with PyQt + Playwright
+
+## Files Modified
+
+### tab-session-manager/tab_session_manager.py
+- Added `current_extensions` instance variable
+- Added `_validate_extensions()` method
+- Updated `launch_browser()` signature and implementation for extensions
+- Made `--disable-web-security` conditional (opt-in)
+- Fixed `run_interactive()` to use `wait_for_timeout()` instead of `time.sleep()`
+- Added `gui_mode` parameter to disable periodic timer
+- Added `--extension` and `--disable-web-security` CLI arguments
+
+### tab-session-manager/desktop_gui/dialogs/new_session.py
+- Added extension picker UI (QListWidget, Add/Remove buttons)
+- Added "Disable Web Security" checkbox with explanation
+- Added `get_extensions()` and `get_disable_web_security()` methods
+
+### tab-session-manager/desktop_gui/utils/session_manager_wrapper.py
+- Added `extensions` and `disable_web_security` parameters
+- Keep browser thread running with Playwright event loop active
+- Set `_browser_running = True` before keep-alive loop
+
+### tab-session-manager/desktop_gui/main_window.py
+- Pass extensions and disable_web_security from dialog to wrapper
+
+### tab-session-manager/desktop_gui/dialogs/detail_dialog.py
+- Display extension names in session details
+
+## Commits
+1. `3d27e61` - feat: [FEAT-009] Add extension loading support for browser sessions
+2. `23d6848` - fix: Resolve manual tab loading issues and add web security toggle
+
+## Testing
+- CLI with extension: Verified extension loads (check chrome://extensions)
+- GUI new session: Verified extension picker works
+- Manual tabs: Verified multiple Ctrl+T tabs load correctly
+- Session save/load: Extensions persist in JSON and reload
+
+## Lessons Learned
+- Playwright's sync API requires the event loop to be actively processed
+- `time.sleep()` blocks the event loop; `page.wait_for_timeout()` does not
+- Threading with Playwright requires careful management of which thread owns the context
+- GUI applications need the browser thread to stay alive for event processing
