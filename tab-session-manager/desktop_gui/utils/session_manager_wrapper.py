@@ -134,8 +134,8 @@ class SessionManagerWrapper(QObject):
                 except Exception as cleanup_error:
                     print(f"[WARNING] Error closing existing browser: {cleanup_error}")
 
-            # Create TabSessionManager instance
-            self.active_manager = TabSessionManager(auto_save_enabled=True, auto_save_interval=3.0)
+            # Create TabSessionManager instance with gui_mode=True
+            self.active_manager = TabSessionManager(auto_save_enabled=True, auto_save_interval=3.0, gui_mode=True)
 
             # Load the session in a separate thread to avoid asyncio loop conflict
             load_success = [False]
@@ -152,31 +152,48 @@ class SessionManagerWrapper(QObject):
 
                     result = self.active_manager.load_session(session_name, group_filter=group_filter)
                     load_success[0] = result
+
+                    # Keep Playwright event loop active on THIS thread (critical for manual tabs)
+                    if result:
+                        self._browser_running = True  # Set here so keep-alive loop runs
+                        print("[DEBUG] Starting Playwright keep-alive loop")
+                        while self._browser_running and self.active_manager and self.active_manager.context:
+                            try:
+                                pages = self.active_manager.context.pages
+                                if pages:
+                                    pages[0].wait_for_timeout(500)
+                                else:
+                                    import time
+                                    time.sleep(0.5)
+                            except Exception:
+                                break
                 except Exception as e:
                     load_error[0] = e
                     import traceback
                     print(f"[ERROR] Load thread exception: {e}")
                     traceback.print_exc()
 
-            thread = threading.Thread(target=load_thread, daemon=False)
+            thread = threading.Thread(target=load_thread, daemon=True)
             thread.start()
-            thread.join(timeout=30)
+
+            # Wait for load to complete (thread continues running for event loop)
+            import time
+            for _ in range(60):  # Wait up to 30 seconds
+                if load_success[0] or load_error[0]:
+                    break
+                time.sleep(0.5)
 
             if load_error[0]:
                 print(f"[ERROR] Load failed with error: {load_error[0]}")
                 raise load_error[0]
 
-            if not thread.is_alive():
-                if load_success[0]:
-                    self.session_loaded.emit(session_name)
-                    self._browser_running = True
-                    self.browser_status_changed.emit(True)
-                    return True
-                else:
-                    print("[ERROR] Load thread completed but returned False")
-                    return False
+            if load_success[0]:
+                self.session_loaded.emit(session_name)
+                self._browser_running = True
+                self.browser_status_changed.emit(True)
+                return True
             else:
-                print("[ERROR] Load thread timed out after 30 seconds")
+                print("[ERROR] Load failed or timed out")
                 return False
 
         except Exception as e:
@@ -185,7 +202,7 @@ class SessionManagerWrapper(QObject):
             traceback.print_exc()
             return False
 
-    def create_new_session(self, session_name, auto_save=True, auto_save_interval=3.0, browser_type='chrome', incognito_mode=False, profile_name=None, extensions=None):
+    def create_new_session(self, session_name, auto_save=True, auto_save_interval=3.0, browser_type='chrome', incognito_mode=False, profile_name=None, extensions=None, disable_web_security=False):
         """Create a new browser session.
 
         Args:
@@ -196,6 +213,7 @@ class SessionManagerWrapper(QObject):
             incognito_mode: Launch in incognito/private mode
             profile_name: Optional profile name for persistent storage
             extensions: Optional list of paths to unpacked extension directories
+            disable_web_security: Disable same-origin policy (for automation/scraping)
 
         Returns:
             bool: True if successful, False otherwise
@@ -203,6 +221,7 @@ class SessionManagerWrapper(QObject):
         try:
             print(f"[DEBUG] Creating session: {session_name}")
             print(f"[DEBUG] Browser: {browser_type}, Incognito: {incognito_mode}")
+            print(f"[DEBUG] Disable Web Security: {disable_web_security}")
             print(f"[DEBUG] Profile: {profile_name if profile_name else 'None (ephemeral)'}")
             print(f"[DEBUG] Extensions: {len(extensions) if extensions else 0}")
 
@@ -213,12 +232,14 @@ class SessionManagerWrapper(QObject):
 
             print("[DEBUG] Session name validated")
 
-            # Create TabSessionManager instance
+            # Create TabSessionManager instance with gui_mode=True to disable periodic timer
+            # (threading conflicts with PyQt + Playwright)
             self.active_manager = TabSessionManager(
                 auto_save_enabled=auto_save,
-                auto_save_interval=auto_save_interval
+                auto_save_interval=auto_save_interval,
+                gui_mode=True
             )
-            print("[DEBUG] TabSessionManager created")
+            print("[DEBUG] TabSessionManager created (gui_mode=True)")
 
             # Launch browser in a separate thread to avoid asyncio loop conflict
             print(f"[DEBUG] Launching browser: {browser_type}")
@@ -232,8 +253,23 @@ class SessionManagerWrapper(QObject):
                     import os
                     os.environ['PLAYWRIGHT_PYTHON_SYNC_LAUNCH'] = '1'
 
-                    self.active_manager.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name, extensions=extensions)
+                    self.active_manager.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name, extensions=extensions, disable_web_security=disable_web_security)
                     launch_success[0] = True
+                    self._browser_running = True  # Set here so keep-alive loop runs
+
+                    # Keep Playwright event loop active on THIS thread (critical for manual tabs)
+                    # This thread must NOT exit - it keeps Playwright responsive
+                    print("[DEBUG] Starting Playwright keep-alive loop")
+                    while self._browser_running and self.active_manager and self.active_manager.context:
+                        try:
+                            pages = self.active_manager.context.pages
+                            if pages:
+                                pages[0].wait_for_timeout(500)
+                            else:
+                                import time
+                                time.sleep(0.5)
+                        except Exception:
+                            break  # Browser closed
                 except Exception as e:
                     # Check if it's just the asyncio warning but browser actually launched
                     error_msg = str(e)
@@ -243,9 +279,15 @@ class SessionManagerWrapper(QObject):
                     else:
                         launch_error[0] = e
 
-            thread = threading.Thread(target=launch_thread, daemon=False)
+            thread = threading.Thread(target=launch_thread, daemon=True)
             thread.start()
-            thread.join(timeout=30)  # Wait up to 30 seconds for browser to start (Brave/profiles need more time)
+
+            # Wait for launch to complete (but thread continues running for event loop)
+            import time
+            for _ in range(60):  # Wait up to 30 seconds
+                if launch_success[0] or launch_error[0]:
+                    break
+                time.sleep(0.5)
 
             if launch_error[0]:
                 raise launch_error[0]

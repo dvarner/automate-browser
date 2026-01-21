@@ -17,17 +17,19 @@ from playwright.sync_api import sync_playwright, Browser, BrowserContext, Page
 class AutoSaveManager:
     """Manages automatic saving of browser sessions when tabs change."""
 
-    def __init__(self, session_manager, interval=3.0, enabled=True):
+    def __init__(self, session_manager, interval=3.0, enabled=True, gui_mode=False):
         self.session_manager = session_manager
         self.interval = interval  # Debounce interval in seconds
         self.enabled = enabled
+        self.gui_mode = gui_mode  # When True, disable periodic timer (GUI handles differently)
         self.save_timer = None
         self.periodic_timer = None  # Periodic save timer (not debounced)
         self.lock = threading.Lock()
         self.cached_tabs = []  # Cache tab data to avoid thread issues
 
         # Start periodic auto-save immediately (works around event detection issues)
-        if enabled:
+        # Skip in GUI mode - the threading model is different and causes conflicts
+        if enabled and not gui_mode:
             self._start_periodic_save()
 
     def trigger_save(self, tabs_data=None):
@@ -71,10 +73,9 @@ class AutoSaveManager:
         def periodic_save():
             if self.enabled:
                 try:
-                    # Get current tabs directly from browser
-                    tabs_data = self.session_manager._get_current_tabs()
-                    if tabs_data:
-                        self.cached_tabs = tabs_data
+                    # Only save if we have cached tabs - never access Playwright from timer thread
+                    # The cache is populated by Playwright event handlers on the correct thread
+                    if self.cached_tabs:
                         self._do_auto_save()
                 except Exception as e:
                     print(f"[Auto-save] Periodic save error: {e}")
@@ -102,14 +103,14 @@ class AutoSaveManager:
 class TabSessionManager:
     """Manages browser tab sessions with save/load functionality."""
 
-    def __init__(self, auto_save_enabled=True, auto_save_interval=3.0):
+    def __init__(self, auto_save_enabled=True, auto_save_interval=3.0, gui_mode=False):
         self.sessions_dir = Path(__file__).parent / 'sessions'
         self.sessions_dir.mkdir(exist_ok=True)
         self.tabs = []
         self.browser = None
         self.context = None
         self.playwright = None
-        self.auto_save_manager = AutoSaveManager(self, interval=auto_save_interval, enabled=auto_save_enabled)
+        self.auto_save_manager = AutoSaveManager(self, interval=auto_save_interval, enabled=auto_save_enabled, gui_mode=gui_mode)
         self.current_browser_type = None  # Track current browser type
         self.current_profile_name = None  # Track current profile name
         self.current_incognito_mode = False  # Track incognito status
@@ -159,7 +160,7 @@ class TabSessionManager:
 
         return valid_paths
 
-    def launch_browser(self, browser_type='chrome', incognito_mode=False, profile_name=None, extensions=None):
+    def launch_browser(self, browser_type='chrome', incognito_mode=False, profile_name=None, extensions=None, disable_web_security=False):
         """Launch browser in headed mode and return browser instance.
 
         Args:
@@ -169,6 +170,7 @@ class TabSessionManager:
                          If None or empty, uses ephemeral session (current behavior)
                          Ignored if incognito_mode=True
             extensions: Optional list of paths to unpacked extension directories (Chromium only)
+            disable_web_security: Disable same-origin policy (for automation/data gathering)
         """
         print(f"Launching {browser_type} browser" + (" in incognito mode..." if incognito_mode else "..."))
         self.playwright = sync_playwright().start()
@@ -232,8 +234,12 @@ class TabSessionManager:
                 '--remote-debugging-port=9222',
                 '--disable-blink-features=AutomationControlled',
                 '--no-sandbox',
-                '--disable-web-security',
             ]
+
+            # Only disable web security if explicitly requested (for automation/data gathering)
+            if disable_web_security:
+                launch_args.append('--disable-web-security')
+                print("  Web security disabled (cross-origin requests allowed)")
 
             if incognito_mode:
                 launch_args.append('--incognito')
@@ -303,8 +309,13 @@ class TabSessionManager:
                 '--remote-debugging-port=9222',
                 '--disable-blink-features=AutomationControlled',
                 '--no-sandbox',
-                '--disable-web-security',
             ]
+
+            # Only disable web security if explicitly requested
+            if disable_web_security:
+                launch_args.append('--disable-web-security')
+                print("  Web security disabled (cross-origin requests allowed)")
+
             if incognito_mode:
                 launch_args.append('--incognito')
 
@@ -1043,7 +1054,7 @@ class TabSessionManager:
 
         return True
 
-    def run_interactive(self, browser_type='chrome', incognito_mode=False, profile_name=None, extensions=None):
+    def run_interactive(self, browser_type='chrome', incognito_mode=False, profile_name=None, extensions=None, disable_web_security=False):
         """Run browser and wait for user input to save.
 
         Args:
@@ -1051,10 +1062,11 @@ class TabSessionManager:
             incognito_mode: Launch in incognito/private mode
             profile_name: Profile name for persistent storage
             extensions: List of paths to unpacked extension directories
+            disable_web_security: Disable same-origin policy (for automation)
         """
         # Only launch browser if not already running
         if not self.browser:
-            self.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name, extensions=extensions)
+            self.launch_browser(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name, extensions=extensions, disable_web_security=disable_web_security)
 
         print("\n" + "="*60)
         print("Browser is running. Open tabs as needed.")
@@ -1065,10 +1077,14 @@ class TabSessionManager:
         print("="*60)
 
         try:
-            # Keep the script running
+            # Keep the script running using Playwright's wait to keep event loop active
+            # This is critical - time.sleep() blocks Playwright's event loop and breaks manual tabs
             while True:
-                import time
-                time.sleep(1)
+                if self.context and self.context.pages:
+                    self.context.pages[0].wait_for_timeout(1000)
+                else:
+                    import time
+                    time.sleep(1)
         except KeyboardInterrupt:
             print("\n\nExiting...")
             self.cleanup()
@@ -1118,6 +1134,8 @@ Examples:
     new_parser.add_argument('--profile', type=str, help='Profile name for persistent storage (e.g., work, personal)')
     new_parser.add_argument('--extension', type=str, action='append', dest='extensions',
         help='Path to unpacked extension directory (can specify multiple times)')
+    new_parser.add_argument('--disable-web-security', action='store_true',
+        help='Disable same-origin policy (for automation/data gathering across sites)')
 
     # Save session command
     save_parser = subparsers.add_parser('save', help='Save current session')
@@ -1171,8 +1189,9 @@ Examples:
             incognito_mode = args.incognito if hasattr(args, 'incognito') else False
             profile_name = args.profile if hasattr(args, 'profile') else None
             extensions = args.extensions if hasattr(args, 'extensions') else None
+            disable_web_security = args.disable_web_security if hasattr(args, 'disable_web_security') else False
 
-            manager.run_interactive(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name, extensions=extensions)
+            manager.run_interactive(browser_type=browser_type, incognito_mode=incognito_mode, profile_name=profile_name, extensions=extensions, disable_web_security=disable_web_security)
 
         elif args.command == 'save':
             # Connect to running browser and save session

@@ -26,6 +26,7 @@ class NewSessionDialog(QDialog):
         self.auto_save_interval = 3.0
         self.browser_type = "chrome"
         self.incognito_mode = False
+        self.disable_web_security = False
         self.profile_name = ""
         self.extensions = []
 
@@ -107,6 +108,20 @@ class NewSessionDialog(QDialog):
         self.incognito_checkbox.setChecked(False)
         self.incognito_checkbox.setStyleSheet("color: #000000; font-size: 10pt; font-weight: bold;")
         layout.addWidget(self.incognito_checkbox)
+
+        # Disable web security checkbox (for automation/data gathering)
+        self.web_security_checkbox = QCheckBox("Disable Web Security (for automation)")
+        self.web_security_checkbox.setChecked(False)
+        self.web_security_checkbox.setStyleSheet("color: #000000; font-size: 10pt; font-weight: bold;")
+        layout.addWidget(self.web_security_checkbox)
+
+        # Explanation for web security option
+        web_security_hint = QLabel(
+            "Enable when gathering data across sites. Allows cross-origin requests.\n"
+            "Leave OFF for normal browsing (some sites won't load with this enabled)."
+        )
+        web_security_hint.setStyleSheet("color: #616161; font-size: 9pt; font-style: italic;")
+        layout.addWidget(web_security_hint)
 
         # Profile name input
         profile_layout = QVBoxLayout()
@@ -366,6 +381,7 @@ class NewSessionDialog(QDialog):
         self.auto_save_interval = self.interval_spin.value()
         self.browser_type = self.browser_combo.currentText().lower()
         self.incognito_mode = self.incognito_checkbox.isChecked()
+        self.disable_web_security = self.web_security_checkbox.isChecked()
 
         # Validate profile name if provided
         self.profile_name = self.profile_input.text().strip()
@@ -400,6 +416,10 @@ class NewSessionDialog(QDialog):
     def get_incognito_mode(self):
         """Get incognito mode status."""
         return self.incognito_mode
+
+    def get_disable_web_security(self):
+        """Get disable web security status."""
+        return self.disable_web_security
 
     def get_profile_name(self):
         """Get the entered profile name."""
